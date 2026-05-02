@@ -8,6 +8,8 @@
 - `../../infrastructure/mihomo/base`
 - `../../apps/cloudflare-ddns/base`
 
+Sealed Secrets Controller 由 Helm 管理，配置见 `../../infrastructure/sealed-secrets/base`。Controller 必须先于本目录中的 SealedSecret 资源安装。
+
 ## 使用方式
 
 本目录可用作手工 Kustomize 应用入口，也可作为 ArgoCD Application 的 `path`。
@@ -16,7 +18,7 @@
 
 ## 上线前检查
 
-- `cloudflare-ddns-secret` 已存在，或已替换为真实 SealedSecret。
-- `cloudflare-ddns-config` 中的 Zone ID 已通过私有 overlay 或 Secret 处理。
-- `clash-config` 已替换为完整私有 Mihomo 配置。
+- Sealed Secrets Controller 已通过 Helm 安装。
+- `cloudflare-ddns-secret` 由 `apps/cloudflare-ddns/base/secret-sealed.yaml` 解封生成。
+- `mihomo-config` 由 `infrastructure/mihomo/base/secret-sealed.yaml` 解封生成。
 - Longhorn CRD 已由 Helm 安装完成。

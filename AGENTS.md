@@ -10,7 +10,7 @@
 | `docs/init.md`       | 从 0 安装 / 恢复集群的步骤、路线和验收内容                     |
 | `docs/basement.md`   | 基础设施介绍：Longhorn、Mihomo                                 |
 | `docs/devops/`       | DevOps / GitOps 目录说明与操作原则                             |
-| `infrastructure/`    | 底层基础设施声明式配置：Longhorn、Mihomo 等                    |
+| `infrastructure/`    | 底层基础设施声明式配置：Sealed Secrets、Longhorn、Mihomo 等    |
 | `apps/`              | 应用层声明式配置：Cloudflare DDNS 等                           |
 | `clusters/`          | 集群最终状态聚合入口                                           |
 | `archive/chat-logs/` | 历史聊天记录                                                   |

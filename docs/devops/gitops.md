@@ -10,9 +10,10 @@
 
 ## 当前已纳管资源
 
-- `infrastructure/mihomo/base`：Mihomo 网关、MetaCubeXD UI、NodePort Service、Headless Service。
+- `infrastructure/sealed-secrets/base`：Sealed Secrets Helm values 与安装口径。
+- `infrastructure/mihomo/base`：Mihomo 网关、MetaCubeXD UI、NodePort Service、Headless Service、加密后的 `mihomo-config`。
 - `infrastructure/longhorn/base`：Longhorn StorageClass、单节点副本设置、`master1` 磁盘声明。
-- `apps/cloudflare-ddns/base`：Cloudflare DDNS ConfigMap 与 Deployment。
+- `apps/cloudflare-ddns/base`：Cloudflare DDNS ConfigMap、Deployment、加密后的 `cloudflare-ddns-secret`。
 - `clusters/master-node`：当前单 Master 集群聚合入口。
 
 ## 敏感信息原则
@@ -23,4 +24,4 @@
 - Mihomo 订阅链接、代理节点密码、UUID、私钥、控制器密钥。
 - Kubeconfig、K3s token、Tailscale Auth Key。
 
-推荐使用 Sealed Secrets、External Secrets 或私有 overlay 管理。
+当前仓库默认使用 Sealed Secrets 管理敏感信息。明文 Secret 只允许作为本地临时文件存在，生成 `SealedSecret` 后必须删除，不能提交。
