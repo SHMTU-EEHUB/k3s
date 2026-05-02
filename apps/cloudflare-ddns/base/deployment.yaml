@@ -1,0 +1,78 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cloudflare-ddns
+  namespace: default
+  labels:
+    app: cloudflare-ddns
+    app.kubernetes.io/name: cloudflare-ddns
+    app.kubernetes.io/part-of: eehub-infra
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cloudflare-ddns
+  strategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: cloudflare-ddns
+        app.kubernetes.io/name: cloudflare-ddns
+        app.kubernetes.io/part-of: eehub-infra
+    spec:
+      automountServiceAccountToken: false
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
+      nodeSelector:
+        node-role.kubernetes.io/control-plane: "true"
+      tolerations:
+        - key: node-role.kubernetes.io/master
+          operator: Exists
+          effect: NoSchedule
+        - key: node-role.kubernetes.io/control-plane
+          operator: Exists
+          effect: NoSchedule
+      containers:
+        - name: cloudflare-ddns
+          image: favonia/cloudflare-ddns:latest
+          imagePullPolicy: Always
+          env:
+            - name: CF_API_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: cloudflare-ddns-secret
+                  key: CF_API_TOKEN
+            - name: DOMAINS
+              valueFrom:
+                configMapKeyRef:
+                  name: cloudflare-ddns-config
+                  key: DOMAINS
+            - name: PROXIED
+              valueFrom:
+                configMapKeyRef:
+                  name: cloudflare-ddns-config
+                  key: PROXIED
+            - name: IP4_PROVIDER
+              valueFrom:
+                configMapKeyRef:
+                  name: cloudflare-ddns-config
+                  key: IP4_PROVIDER
+            - name: IP4_LOCAL_INTERFACE
+              valueFrom:
+                configMapKeyRef:
+                  name: cloudflare-ddns-config
+                  key: IP4_LOCAL_INTERFACE
+            - name: IP6_PROVIDER
+              value: "none"
+            - name: UPDATE_CRON
+              value: "@every 5m"
+            - name: TZ
+              value: Asia/Shanghai
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              cpu: 50m
+              memory: 64Mi
