@@ -1,0 +1,22 @@
+# Historical exports may contain credentials, tokens or proxy subscription data.
+archive/
+
+# Local/private files
+.env
+.env.*
+*.local.yaml
+*.private.yaml
+*.secret.yaml
+kubeconfig
+kubeconfig.*
+
+# Unencrypted Kubernetes Secrets must not be committed.
+**/secret.yaml
+**/secret-*.yaml
+!**/secret-sealed.yaml
+!**/*.example.yaml
+
+# Mihomo/Clash full configs often contain subscription URLs, passwords, UUIDs and tokens.
+**/config.private.yaml
+**/mihomo.private.yaml
+**/clash.private.yaml
