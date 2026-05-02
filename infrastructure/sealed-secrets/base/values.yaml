@@ -1,0 +1,25 @@
+fullnameOverride: sealed-secrets-controller
+
+image:
+  pullPolicy: IfNotPresent
+
+resources:
+  requests:
+    cpu: 10m
+    memory: 64Mi
+  limits:
+    cpu: 100m
+    memory: 128Mi
+
+serviceAccount:
+  create: true
+
+rbac:
+  create: true
+
+crd:
+  create: true
+
+metrics:
+  serviceMonitor:
+    enabled: false
