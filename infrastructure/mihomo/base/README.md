@@ -4,12 +4,14 @@
 
 ## 敏感信息
 
-`configmap.yaml` 是安全占位配置，不包含真实订阅链接、节点密码、UUID、私钥或控制器密钥。
+完整 Mihomo `config.yaml` 已改为 SealedSecret 管理：
 
-上线前必须用私有配置替换 `clash-config` 中的 `config.yaml`。推荐方式：
+- 提交文件：`secret-sealed.yaml`
+- 解封后 Secret：`mihomo-config`
+- Secret key：`config.yaml`
+- Deployment 挂载来源：`Secret/mihomo-config`
 
-- 私有 overlay：在不提交仓库的 `config.private.yaml` 中覆盖 `clash-config`。
-- Sealed Secrets / External Secrets：把完整 `config.yaml` 放入加密 Secret，然后把 Deployment 的卷来源从 ConfigMap 改为 Secret。
+`configmap.example.yaml` 与 `config.private.example.yaml` 只作为本地生成 / 维护示例，不参与 `kustomization.yaml`。
 
 ## 当前运行口径
 

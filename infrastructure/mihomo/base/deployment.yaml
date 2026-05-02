@@ -46,8 +46,8 @@ spec:
               subPath: config.yaml
       volumes:
         - name: config-volume
-          configMap:
-            name: clash-config
+          secret:
+            secretName: mihomo-config
 ---
 apiVersion: apps/v1
 kind: Deployment
