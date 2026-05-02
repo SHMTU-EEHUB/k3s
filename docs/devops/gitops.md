@@ -10,6 +10,7 @@
 
 ## 当前已纳管资源
 
+- `infrastructure/argocd/base`：ArgoCD Helm values 与安装口径。
 - `infrastructure/sealed-secrets/base`：Sealed Secrets Helm values 与安装口径。
 - `infrastructure/mihomo/base`：Mihomo 网关、MetaCubeXD UI、NodePort Service、Headless Service、加密后的 `mihomo-config`。
 - `infrastructure/longhorn/base`：Longhorn StorageClass、单节点副本设置、`master1` 磁盘声明。

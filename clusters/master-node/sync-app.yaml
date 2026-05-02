@@ -9,7 +9,7 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://example.invalid/REPLACE_WITH_GIT_REPO.git
+    repoURL: https://github.com/SHMTU-EEHUB/k3s.git
     targetRevision: main
     path: clusters/master-node
   destination:

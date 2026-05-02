@@ -11,7 +11,7 @@
 
 ## DevOps / GitOps 入口
 
-- `infrastructure/`：底层基础设施，例如 Sealed Secrets、Longhorn、Mihomo。
+- `infrastructure/`：底层基础设施，例如 ArgoCD、Sealed Secrets、Longhorn、Mihomo。
 - `apps/`：业务与运维应用，例如 Cloudflare DDNS。
 - `clusters/master-node/`：当前 `master1` 单节点阶段的集群聚合入口。
 
