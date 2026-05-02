@@ -1,0 +1,92 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mihomo
+  namespace: default
+  labels:
+    app: mihomo
+    app.kubernetes.io/name: mihomo
+    app.kubernetes.io/component: proxy-gateway
+    app.kubernetes.io/part-of: eehub-infra
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mihomo
+  strategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: mihomo
+        app.kubernetes.io/name: mihomo
+        app.kubernetes.io/component: proxy-gateway
+        app.kubernetes.io/part-of: eehub-infra
+    spec:
+      automountServiceAccountToken: false
+      containers:
+        - name: mihomo
+          image: metacubex/mihomo:latest
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            capabilities:
+              add:
+                - NET_ADMIN
+                - NET_RAW
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 200m
+              memory: 256Mi
+          volumeMounts:
+            - name: config-volume
+              mountPath: /root/.config/mihomo/config.yaml
+              subPath: config.yaml
+      volumes:
+        - name: config-volume
+          configMap:
+            name: clash-config
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: metacubexd-ui
+  namespace: default
+  labels:
+    app: metacubexd-ui
+    app.kubernetes.io/name: metacubexd-ui
+    app.kubernetes.io/component: proxy-ui
+    app.kubernetes.io/part-of: eehub-infra
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: metacubexd-ui
+  strategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: metacubexd-ui
+        app.kubernetes.io/name: metacubexd-ui
+        app.kubernetes.io/component: proxy-ui
+        app.kubernetes.io/part-of: eehub-infra
+    spec:
+      automountServiceAccountToken: false
+      containers:
+        - name: metacubexd
+          image: ghcr.io/metacubex/metacubexd:latest
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 80
+              protocol: TCP
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              cpu: 50m
+              memory: 64Mi

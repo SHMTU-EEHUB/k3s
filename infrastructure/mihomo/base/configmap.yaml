@@ -1,0 +1,139 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: clash-config
+  namespace: default
+  labels:
+    app.kubernetes.io/name: mihomo
+    app.kubernetes.io/part-of: eehub-infra
+  annotations:
+    eehub.mingz.top/private-config-required: "true"
+data:
+  # 安全占位配置：保留当前端口、DNS、TUN 和规则形态，但不包含订阅链接、节点密码、UUID 或控制器密钥。
+  # 真正使用前请用私有 overlay、SealedSecret 或外部 Secret 管理完整 config.yaml。
+  config.yaml: |
+    mixed-port: 7897
+    socks-port: 7898
+    port: 7899
+    ipv6: true
+    udp: true
+    allow-lan: true
+    bind-address: '*'
+    mode: rule
+    log-level: info
+    unified-delay: true
+
+    experimental:
+      ignore-resolve-fail: true
+
+    dns:
+      enable: true
+      listen: '127.0.0.1:1053'
+      ipv6: true
+      default-nameserver:
+        - 223.5.5.5
+        - 119.29.29.29
+      enhanced-mode: fake-ip
+      fake-ip-range: 28.0.0.1/8
+      use-hosts: true
+      fake-ip-filter:
+        - '*.lan'
+        - '*.localdomain'
+        - '*.localhost'
+        - '*.local'
+        - '*.home.arpa'
+        - +.pool.ntp.org
+        - +.msftconnecttest.com
+        - +.msftncsi.com
+      nameserver:
+        - 'https://223.5.5.5/dns-query'
+        - 'https://doh.pub/dns-query'
+        - 'https://1.1.1.1/dns-query'
+        - 'https://dns.google/dns-query'
+      fallback:
+        - 'https://1.1.1.1/dns-query'
+        - 'https://dns.google/dns-query'
+      fallback-filter:
+        geoip: false
+
+    external-controller: 0.0.0.0:9097
+    secret: CHANGE_ME_IN_PRIVATE_CONFIG
+
+    tun:
+      enable: true
+      stack: system
+      device: Mihomo
+      auto-route: true
+      strict-route: false
+      auto-detect-interface: true
+      dns-hijack:
+        - any:53
+      mtu: 9000
+      exclude-interface:
+        - tailscale0
+      route-exclude-address:
+        - 100.64.0.0/10
+        - fd7a:115c:a1e0::/48
+
+    external-controller-cors:
+      allow-private-network: true
+      allow-origins:
+        - tauri://localhost
+        - http://tauri.localhost
+        - https://yacd.metacubex.one
+        - https://metacubex.github.io
+        - https://board.zash.run.place
+
+    geox-url:
+      geoip: 'https://testingcf.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@release/geoip.dat'
+      geosite: 'https://testingcf.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@release/geosite.dat'
+      mmdb: 'https://testingcf.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@release/country.mmdb'
+      asn: 'https://github.com/xishang0128/geoip/releases/download/latest/GeoLite2-ASN.mmdb'
+
+    proxies:
+      - name: DNS_Hijack
+        type: dns
+
+    proxy-groups:
+      - name: 节点选择
+        type: select
+        proxies:
+          - DIRECT
+      - name: 国内节点
+        type: select
+        proxies:
+          - DIRECT
+      - name: 漏网之鱼
+        type: select
+        proxies:
+          - 节点选择
+          - 国内节点
+      - name: gemini
+        type: select
+        proxies:
+          - 节点选择
+          - DIRECT
+
+    rules:
+      - DST-PORT,53,DNS_Hijack
+      - DOMAIN-SUFFIX,edu.cn,DIRECT
+      - DOMAIN-KEYWORD,ip-api.com,DIRECT
+      - AND,((DOMAIN-SUFFIX,github.com),(DST-PORT,22)),节点选择
+      - DST-PORT,22,DIRECT
+      - PROCESS-NAME,tailscale,DIRECT
+      - PROCESS-NAME,tailscaled,DIRECT
+      - DOMAIN-SUFFIX,chatgpt.com,节点选择
+      - DOMAIN-SUFFIX,openai.com,节点选择
+      - DOMAIN-SUFFIX,gemini.google.com,gemini
+      - DOMAIN-SUFFIX,telegram.org,节点选择
+      - DOMAIN-SUFFIX,t.me,节点选择
+      - GEOIP,lan,DIRECT,no-resolve
+      - DOMAIN-SUFFIX,local,DIRECT,no-resolve
+      - IP-CIDR,127.0.0.0/8,DIRECT,no-resolve
+      - IP-CIDR,172.16.0.0/12,DIRECT,no-resolve
+      - IP-CIDR,192.168.0.0/16,DIRECT,no-resolve
+      - IP-CIDR,10.0.0.0/8,DIRECT,no-resolve
+      - IP-CIDR,100.64.0.0/10,DIRECT,no-resolve
+      - IP-CIDR6,fe80::/10,DIRECT,no-resolve
+      - GEOIP,CN,国内节点
+      - MATCH,漏网之鱼

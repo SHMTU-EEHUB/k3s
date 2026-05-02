@@ -1,0 +1,40 @@
+# Copy this file to config.private.yaml and keep it out of git.
+# It can be used by a private overlay to replace ConfigMap/clash-config.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: clash-config
+  namespace: default
+data:
+  config.yaml: |
+    mixed-port: 7897
+    socks-port: 7898
+    port: 7899
+    ipv6: true
+    udp: true
+    allow-lan: true
+    bind-address: '*'
+    mode: rule
+    external-controller: 0.0.0.0:9097
+    secret: REPLACE_WITH_PRIVATE_CONTROLLER_SECRET
+
+    proxy-providers:
+      your-provider:
+        type: http
+        url: 'REPLACE_WITH_PRIVATE_SUBSCRIPTION_URL'
+        path: ./proxy_provider/provider.yaml
+        interval: 86400
+
+    proxies:
+      - name: DNS_Hijack
+        type: dns
+
+    proxy-groups:
+      - name: 节点选择
+        type: select
+        proxies:
+          - DIRECT
+
+    rules:
+      - DST-PORT,53,DNS_Hijack
+      - MATCH,节点选择
