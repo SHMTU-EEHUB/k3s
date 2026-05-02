@@ -16,6 +16,10 @@
 
 当前 values 使用 `server.insecure=true`，适合先在可信 LAN / Tailscale 内快速启用。后续如需正式暴露，再接入 Ingress / TLS。
 
+## GitHub 访问
+
+当前 values 已给 `repoServer` 注入代理环境变量，通过集群内 `mihomo-proxy-nodeport.default.svc.cluster.local:7897` 访问 GitHub。
+
 ## GitOps 入口
 
 仓库同步入口：`clusters/master-node/sync-app.yaml`

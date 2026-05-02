@@ -28,6 +28,23 @@ controller:
       memory: 512Mi
 
 repoServer:
+  env:
+    - name: HTTP_PROXY
+      value: http://mihomo-proxy-nodeport.default.svc.cluster.local:7897
+    - name: HTTPS_PROXY
+      value: http://mihomo-proxy-nodeport.default.svc.cluster.local:7897
+    - name: ALL_PROXY
+      value: http://mihomo-proxy-nodeport.default.svc.cluster.local:7897
+    - name: NO_PROXY
+      value: 127.0.0.1,localhost,.svc,.cluster.local,10.10.0.0/16,172.24.0.0/16,172.25.0.0/16
+    - name: http_proxy
+      value: http://mihomo-proxy-nodeport.default.svc.cluster.local:7897
+    - name: https_proxy
+      value: http://mihomo-proxy-nodeport.default.svc.cluster.local:7897
+    - name: all_proxy
+      value: http://mihomo-proxy-nodeport.default.svc.cluster.local:7897
+    - name: no_proxy
+      value: 127.0.0.1,localhost,.svc,.cluster.local,10.10.0.0/16,172.24.0.0/16,172.25.0.0/16
   resources:
     requests:
       cpu: 50m
