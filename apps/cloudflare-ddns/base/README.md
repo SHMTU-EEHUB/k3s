@@ -4,12 +4,13 @@
 
 ## 敏感信息
 
-`CF_API_TOKEN` 不提交到仓库。请用以下任一方式在集群中准备 `cloudflare-ddns-secret`：
+Cloudflare 私有材料已改为 SealedSecret 管理：
 
-- 手动创建 Kubernetes Secret。
-- 使用 Sealed Secrets，将加密后的结果替换到 `secret-sealed.yaml`，并在 `kustomization.yaml` 中显式加入该文件。
+- 提交文件：`secret-sealed.yaml`
+- 解封后 Secret：`cloudflare-ddns-secret`
+- Secret keys：`CF_API_TOKEN`、`ZONE_ID`
 
-`ZONE_ID` 在当前仓库中使用占位符，若你希望完全 GitOps 化，也应放入私有 overlay 或 Secret 管理。
+普通 `ConfigMap/cloudflare-ddns-config` 只保存非敏感运行参数，例如域名、代理开关和本地网卡名。
 
 ## 当前运行口径
 

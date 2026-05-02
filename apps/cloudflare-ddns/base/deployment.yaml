@@ -53,6 +53,12 @@ spec:
                 configMapKeyRef:
                   name: cloudflare-ddns-config
                   key: PROXIED
+            - name: ZONE_ID
+              valueFrom:
+                secretKeyRef:
+                  name: cloudflare-ddns-secret
+                  key: ZONE_ID
+                  optional: true
             - name: IP4_PROVIDER
               valueFrom:
                 configMapKeyRef:

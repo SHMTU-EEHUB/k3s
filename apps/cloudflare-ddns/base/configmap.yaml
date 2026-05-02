@@ -7,9 +7,7 @@ metadata:
     app.kubernetes.io/name: cloudflare-ddns
     app.kubernetes.io/part-of: eehub-infra
 data:
-  # 当前 master1 记录。Zone ID 属于私有材料，提交前请替换为私有 overlay 或 SealedSecret 方案。
   DOMAINS: "master1.eehub.mingz.top"
-  ZONE_ID: "REPLACE_WITH_CLOUDFLARE_ZONE_ID"
   PROXIED: "false"
   IP_VERSION: "4"
   IP4_PROVIDER: "local"
