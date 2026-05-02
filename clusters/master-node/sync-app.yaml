@@ -1,0 +1,23 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: eehub-master-node
+  namespace: argocd
+  labels:
+    app.kubernetes.io/name: eehub-master-node
+    app.kubernetes.io/part-of: eehub-gitops
+spec:
+  project: default
+  source:
+    repoURL: https://example.invalid/REPLACE_WITH_GIT_REPO.git
+    targetRevision: main
+    path: clusters/master-node
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: default
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
