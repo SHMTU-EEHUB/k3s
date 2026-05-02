@@ -1,0 +1,75 @@
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: longhorn-hdd-1replica
+  labels:
+    app.kubernetes.io/name: longhorn
+    app.kubernetes.io/part-of: eehub-infra
+provisioner: driver.longhorn.io
+allowVolumeExpansion: true
+reclaimPolicy: Delete
+volumeBindingMode: Immediate
+parameters:
+  numberOfReplicas: "1"
+  staleReplicaTimeout: "2880"
+  dataLocality: best-effort
+  fsType: ext4
+  diskSelector: HDD
+  dataEngine: v1
+---
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: longhorn-hdd-2replica
+  labels:
+    app.kubernetes.io/name: longhorn
+    app.kubernetes.io/part-of: eehub-infra
+provisioner: driver.longhorn.io
+allowVolumeExpansion: true
+reclaimPolicy: Delete
+volumeBindingMode: Immediate
+parameters:
+  numberOfReplicas: "2"
+  staleReplicaTimeout: "2880"
+  dataLocality: best-effort
+  fsType: ext4
+  diskSelector: HDD
+  dataEngine: v1
+---
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: longhorn-hdd-3replica
+  labels:
+    app.kubernetes.io/name: longhorn
+    app.kubernetes.io/part-of: eehub-infra
+provisioner: driver.longhorn.io
+allowVolumeExpansion: true
+reclaimPolicy: Delete
+volumeBindingMode: Immediate
+parameters:
+  numberOfReplicas: "3"
+  staleReplicaTimeout: "2880"
+  dataLocality: best-effort
+  fsType: ext4
+  diskSelector: HDD
+  dataEngine: v1
+---
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: longhorn-fast-1replica
+  labels:
+    app.kubernetes.io/name: longhorn
+    app.kubernetes.io/part-of: eehub-infra
+provisioner: driver.longhorn.io
+allowVolumeExpansion: true
+reclaimPolicy: Delete
+volumeBindingMode: Immediate
+parameters:
+  numberOfReplicas: "1"
+  staleReplicaTimeout: "2880"
+  dataLocality: best-effort
+  fsType: ext4
+  diskSelector: fast
+  dataEngine: v1

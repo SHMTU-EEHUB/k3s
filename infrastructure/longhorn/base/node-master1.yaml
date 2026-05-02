@@ -1,0 +1,41 @@
+apiVersion: longhorn.io/v1beta2
+kind: Node
+metadata:
+  name: master1
+  namespace: longhorn-system
+  labels:
+    app.kubernetes.io/name: longhorn
+    app.kubernetes.io/part-of: eehub-infra
+spec:
+  name: master1
+  allowScheduling: true
+  evictionRequested: false
+  instanceManagerCPURequest: 0
+  tags: []
+  disks:
+    default-disk-17c60b9f78ef0255:
+      path: /var/lib/longhorn/
+      allowScheduling: false
+      evictionRequested: false
+      storageReserved: 33837466828
+      tags: []
+      diskType: filesystem
+      diskDriver: ""
+    hdd1-master1:
+      path: /mnt/storage/sdb
+      allowScheduling: true
+      evictionRequested: false
+      storageReserved: 53687091200
+      tags:
+        - HDD
+      diskType: filesystem
+      diskDriver: ""
+    hdd2-master1:
+      path: /mnt/storage/sdc
+      allowScheduling: true
+      evictionRequested: false
+      storageReserved: 53687091200
+      tags:
+        - HDD
+      diskType: filesystem
+      diskDriver: ""
