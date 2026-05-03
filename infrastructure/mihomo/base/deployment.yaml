@@ -17,6 +17,8 @@ spec:
     type: RollingUpdate
   template:
     metadata:
+      annotations:
+        eehub.mingz.top/mihomo-config-revision: clean-provider-1-v1
       labels:
         app: mihomo
         app.kubernetes.io/name: mihomo

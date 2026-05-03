@@ -1,6 +1,6 @@
 # Mihomo / Clash
 
-当前对应 `master1` 上的 `mihomo`、`metacubexd-ui`、`clash-proxy`、`mihomo-proxy-nodeport`、`mihomo-api-ui`、`metacubexd-ui-svc`。
+当前对应 `master1` 上的 `mihomo`、`metacubexd-ui`、`clash-proxy`、`mihomo-proxy-nodeport`、`mihomo-clean-provider-1`、`mihomo-api-ui`、`metacubexd-ui-svc`。
 
 ## 敏感信息
 
@@ -18,8 +18,11 @@
 - 命名空间：`default`
 - Workload：`Deployment/mihomo`，`Deployment/metacubexd-ui`
 - Mixed 代理：`mihomo-proxy-nodeport`，NodePort `30789`
+- Clean 节点专用代理：`mihomo-clean-provider-1`，ClusterIP Service，Mihomo 监听 `7896`
 - 控制器 API：`mihomo-api-ui`，NodePort `30910`
 - Web UI：`metacubexd-ui-svc`，NodePort `30911`
 - Headless Service：`clash-proxy`
 
-控制器 API 和 Web UI 只应在可信 LAN / Tailscale 内访问，不能直接暴露公网。
+`clean-provider-1` 在私有 Mihomo `config.yaml` 中作为 clean 节点专用代理组使用，并用独立 `listeners` 入口把 `7896` 转到该代理组；示例见 `config.private.example.yaml`。
+
+控制器 API 和 Web UI 只应在可信 LAN / Tailscale 内访问，不能直接暴露公网；clean 节点专用代理仅供集群内其它容器访问。

@@ -24,16 +24,37 @@ data:
         url: 'REPLACE_WITH_PRIVATE_SUBSCRIPTION_URL'
         path: ./proxy_provider/provider.yaml
         interval: 86400
+        # If the clean node also appears in this provider, exclude it from normal groups.
+        exclude-filter: '^REPLACE_WITH_CLEAN_NODE_NAME$'
+
+    listeners:
+      - name: clean-provider-1-mixed
+        type: mixed
+        port: 7896
+        listen: 0.0.0.0
+        udp: true
+        proxy: clean-provider-1
 
     proxies:
       - name: DNS_Hijack
         type: dns
+      # Add the clean node here in private config, then point clean-provider-1 at it.
+      # - name: REPLACE_WITH_CLEAN_NODE_NAME
+      #   type: REPLACE_WITH_PROXY_TYPE
+      #   server: REPLACE_WITH_PRIVATE_SERVER
+      #   port: 443
 
     proxy-groups:
       - name: 节点选择
         type: select
         proxies:
           - DIRECT
+        use:
+          - your-provider
+      - name: clean-provider-1
+        type: select
+        proxies:
+          - REPLACE_WITH_CLEAN_NODE_NAME
 
     rules:
       - DST-PORT,53,DNS_Hijack
