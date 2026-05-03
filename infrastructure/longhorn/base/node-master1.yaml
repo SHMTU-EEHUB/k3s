@@ -15,10 +15,11 @@ spec:
   disks:
     default-disk-17c60b9f78ef0255:
       path: /var/lib/longhorn/
-      allowScheduling: false
+      allowScheduling: true
       evictionRequested: false
       storageReserved: 33837466828
-      tags: []
+      tags:
+        - pg-fast
       diskType: filesystem
       diskDriver: ""
     hdd1-master1:
