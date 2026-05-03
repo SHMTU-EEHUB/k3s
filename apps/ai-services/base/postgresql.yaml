@@ -1,0 +1,151 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: ai-postgresql
+  namespace: ai-services
+  labels:
+    app: ai-postgresql
+    app.kubernetes.io/name: ai-postgresql
+    app.kubernetes.io/component: database
+    app.kubernetes.io/part-of: eehub-ai-services
+spec:
+  type: ClusterIP
+  selector:
+    app: ai-postgresql
+  ports:
+    - name: postgresql
+      protocol: TCP
+      port: 5432
+      targetPort: 5432
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ai-postgresql-init
+  namespace: ai-services
+  labels:
+    app.kubernetes.io/name: ai-postgresql
+    app.kubernetes.io/component: database-init
+    app.kubernetes.io/part-of: eehub-ai-services
+data:
+  01-init-ai-databases.sh: |
+    set -eu
+
+    psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" \
+      --set=axonhub_password="$AXONHUB_DB_PASSWORD" \
+      --set=metapi_password="$METAPI_DB_PASSWORD" <<'SQL'
+    CREATE USER axonhub WITH PASSWORD :'axonhub_password';
+    CREATE DATABASE axonhub OWNER axonhub;
+    CREATE USER metapi WITH PASSWORD :'metapi_password';
+    CREATE DATABASE metapi OWNER metapi;
+    SQL
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: ai-postgresql
+  namespace: ai-services
+  labels:
+    app: ai-postgresql
+    app.kubernetes.io/name: ai-postgresql
+    app.kubernetes.io/component: database
+    app.kubernetes.io/part-of: eehub-ai-services
+spec:
+  serviceName: ai-postgresql
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ai-postgresql
+  template:
+    metadata:
+      labels:
+        app: ai-postgresql
+        app.kubernetes.io/name: ai-postgresql
+        app.kubernetes.io/component: database
+        app.kubernetes.io/part-of: eehub-ai-services
+    spec:
+      automountServiceAccountToken: false
+      containers:
+        - name: postgresql
+          image: postgres:16-alpine
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: postgresql
+              containerPort: 5432
+              protocol: TCP
+          env:
+            - name: POSTGRES_USER
+              value: postgres
+            - name: POSTGRES_DB
+              value: postgres
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: ai-postgresql-secret
+                  key: POSTGRES_PASSWORD
+            - name: AXONHUB_DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: ai-postgresql-secret
+                  key: AXONHUB_DB_PASSWORD
+            - name: METAPI_DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: ai-postgresql-secret
+                  key: METAPI_DB_PASSWORD
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+            - name: TZ
+              value: Asia/Shanghai
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 1Gi
+          readinessProbe:
+            exec:
+              command:
+                - pg_isready
+                - -U
+                - postgres
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 6
+          livenessProbe:
+            exec:
+              command:
+                - pg_isready
+                - -U
+                - postgres
+            initialDelaySeconds: 30
+            periodSeconds: 20
+            timeoutSeconds: 5
+            failureThreshold: 6
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+            - name: init-scripts
+              mountPath: /docker-entrypoint-initdb.d/01-init-ai-databases.sh
+              subPath: 01-init-ai-databases.sh
+              readOnly: true
+      volumes:
+        - name: init-scripts
+          configMap:
+            name: ai-postgresql-init
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+        labels:
+          app.kubernetes.io/name: ai-postgresql
+          app.kubernetes.io/component: database
+          app.kubernetes.io/part-of: eehub-ai-services
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        storageClassName: longhorn-fast-1replica
+        resources:
+          requests:
+            storage: 20Gi

@@ -1,0 +1,12 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  # Generate this file from secret.example.yaml with kubeseal before syncing this base.
+  # Do not commit unencrypted Secret manifests.
+  - secret-sealed.yaml
+  - namespace.yaml
+  - postgresql.yaml
+  - axonhub.yaml
+  - metapi.yaml
+  - kiro-rs.yaml
+  - cli-proxy-api.yaml

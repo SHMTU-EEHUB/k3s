@@ -7,6 +7,7 @@
 - `../../infrastructure/longhorn/base`
 - `../../infrastructure/mihomo/base`
 - `../../apps/cloudflare-ddns/base`
+- `../../apps/ai-services/base`
 
 Sealed Secrets Controller 由 Helm 管理，配置见 `../../infrastructure/sealed-secrets/base`。Controller 必须先于本目录中的 SealedSecret 资源安装。
 
@@ -21,4 +22,5 @@ Sealed Secrets Controller 由 Helm 管理，配置见 `../../infrastructure/seal
 - Sealed Secrets Controller 已通过 Helm 安装。
 - `cloudflare-ddns-secret` 由 `apps/cloudflare-ddns/base/secret-sealed.yaml` 解封生成。
 - `mihomo-config` 由 `infrastructure/mihomo/base/secret-sealed.yaml` 解封生成。
+- `ai-postgresql-secret`、`axonhub-secret`、`metapi-secret`、`kiro-rs-secret`、`cli-proxy-api-secret` 由 `apps/ai-services/base/secret-sealed.yaml` 解封生成。
 - Longhorn CRD 已由 Helm 安装完成。

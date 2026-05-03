@@ -15,6 +15,7 @@
 - `infrastructure/mihomo/base`：Mihomo 网关、MetaCubeXD UI、NodePort / ClusterIP / Headless Service、加密后的 `mihomo-config`。
 - `infrastructure/longhorn/base`：Longhorn StorageClass、单节点副本设置、`master1` 磁盘声明，以及系统 SSD 先纳入 `fast` 层、后迁 worker SSD 的策略。
 - `apps/cloudflare-ddns/base`：Cloudflare DDNS ConfigMap、Deployment、加密后的 `cloudflare-ddns-secret`。
+- `apps/ai-services/base`：AI 服务组，包括共享 PostgreSQL（`longhorn-fast-1replica`）、AxonHub、Metapi、Kiro、CLIProxyAPI，以及加密后的 `secret-sealed.yaml`。
 - `clusters/master-node`：当前单 Master 集群聚合入口。
 
 ## 敏感信息原则
@@ -23,6 +24,7 @@
 
 - Cloudflare API Token。
 - Mihomo 订阅链接、代理节点密码、UUID、私钥、控制器密钥。
+- AxonHub、Metapi、Kiro、CLIProxyAPI 的 API Key、管理 Token、数据库口令与 OAuth / Refresh Token。
 - Kubeconfig、K3s token、Tailscale Auth Key。
 
 当前仓库默认使用 Sealed Secrets 管理敏感信息。明文 Secret 只允许作为本地临时文件存在，生成 `SealedSecret` 后必须删除，不能提交。

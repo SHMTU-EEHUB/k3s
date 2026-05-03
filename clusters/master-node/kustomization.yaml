@@ -4,3 +4,4 @@ resources:
   - ../../infrastructure/longhorn/base
   - ../../infrastructure/mihomo/base
   - ../../apps/cloudflare-ddns/base
+  - ../../apps/ai-services/base
