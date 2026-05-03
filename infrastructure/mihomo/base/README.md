@@ -21,6 +21,7 @@
 - Clean 节点专用代理：`mihomo-clean-provider-1`，ClusterIP Service，Mihomo 监听 `7896`
 - 控制器 API：`mihomo-api-ui`，NodePort `30910`
 - Web UI：`metacubexd-ui-svc`，NodePort `30911`
+- Web UI 域名入口：`mihomoui.eehub.mingz.top` → `Service/metacubexd-ui-svc:80`，由 Traefik Ingress 暴露
 - Headless Service：`clash-proxy`
 
 `clean-provider-1` 在私有 Mihomo `config.yaml` 中作为 clean 节点专用代理组使用，并用独立 `listeners` 入口把 `7896` 转到该代理组；示例见 `config.private.example.yaml`。

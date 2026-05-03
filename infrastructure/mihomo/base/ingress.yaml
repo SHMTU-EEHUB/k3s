@@ -1,0 +1,24 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: mihomo-ui
+  namespace: default
+  labels:
+    app.kubernetes.io/name: mihomo-ui
+    app.kubernetes.io/component: proxy-ui
+    app.kubernetes.io/part-of: eehub-infra
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: web
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: mihomoui.eehub.mingz.top
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: metacubexd-ui-svc
+                port:
+                  number: 80

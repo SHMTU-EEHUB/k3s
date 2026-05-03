@@ -1,0 +1,33 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ai-services-web
+  namespace: ai-services
+  labels:
+    app.kubernetes.io/name: ai-services-web
+    app.kubernetes.io/part-of: eehub-ai-services
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: web
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: metaapi.eehub.mingz.top
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: metapi
+                port:
+                  number: 4000
+    - host: axonhub.eehub.mingz.top
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: axonhub
+                port:
+                  number: 8090

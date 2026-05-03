@@ -10,3 +10,4 @@ resources:
   - metapi.yaml
   - kiro-rs.yaml
   - cli-proxy-api.yaml
+  - ingress.yaml

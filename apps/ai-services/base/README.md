@@ -29,7 +29,9 @@
 ## 当前运行口径
 
 - 命名空间：`ai-services`
-- 暴露方式：默认全部使用 `ClusterIP`
+- 暴露方式：服务本身默认使用 `ClusterIP`；通过 Traefik Ingress 暴露：
+  - `metaapi.eehub.mingz.top` → `Service/metapi:4000`
+  - `axonhub.eehub.mingz.top` → `Service/axonhub:8090`
 - 出站代理：
   - `metapi`：默认 Mihomo 节点 `7897`
   - `kiro-rs`：clean Mihomo 节点 `7896`

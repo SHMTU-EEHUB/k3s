@@ -7,7 +7,7 @@ metadata:
     app.kubernetes.io/name: cloudflare-ddns
     app.kubernetes.io/part-of: eehub-infra
 data:
-  DOMAINS: "master1.eehub.mingz.top"
+  DOMAINS: "master1.eehub.mingz.top,*.eehub.mingz.top,metaapi.eehub.mingz.top,axonhub.eehub.mingz.top,mihomoui.eehub.mingz.top"
   PROXIED: "false"
   IP_VERSION: "4"
   IP4_PROVIDER: "local"

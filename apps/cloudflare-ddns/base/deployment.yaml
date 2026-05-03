@@ -16,6 +16,8 @@ spec:
     type: RollingUpdate
   template:
     metadata:
+      annotations:
+        eehub.mingz.top/cloudflare-ddns-config-revision: ingress-hosts-v1
       labels:
         app: cloudflare-ddns
         app.kubernetes.io/name: cloudflare-ddns
