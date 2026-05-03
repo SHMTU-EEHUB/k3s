@@ -72,7 +72,14 @@ data:
       exclude-interface:
         - tailscale0
       route-exclude-address:
+        - 172.24.0.0/16
+        - 172.25.0.0/16
+        - 10.0.0.0/8
+        - 172.16.0.0/12
+        - 192.168.0.0/16
         - 100.64.0.0/10
+        - fd00:42::/56
+        - fd00:43::/112
         - fd7a:115c:a1e0::/48
 
     external-controller-cors:

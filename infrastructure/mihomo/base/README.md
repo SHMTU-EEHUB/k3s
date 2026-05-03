@@ -19,11 +19,14 @@
 - Workload：`Deployment/mihomo`，`Deployment/metacubexd-ui`
 - Mixed 代理：`mihomo-proxy-nodeport`，NodePort `30789`
 - Clean 节点专用代理：`mihomo-clean-provider-1`，ClusterIP Service，Mihomo 监听 `7896`
+- TUN 透明网关：Mihomo Pod 挂载 `/dev/net/tun`，用于路由注入 fallback 场景
 - 控制器 API：`mihomo-api-ui`，NodePort `30910`
 - Web UI：`metacubexd-ui-svc`，NodePort `30911`
 - Web UI 域名入口：`mihomoui.eehub.mingz.top` → `Service/metacubexd-ui-svc:80`，由 Traefik Ingress 暴露
 - Headless Service：`clash-proxy`
 
 `clean-provider-1` 在私有 Mihomo `config.yaml` 中作为 clean 节点专用代理组使用，并用独立 `listeners` 入口把 `7896` 转到该代理组；示例见 `config.private.example.yaml`。
+
+TUN 只作为不支持显式代理的业务 Pod 的路由注入 fallback，不使用 `hostNetwork`，不会修改宿主机网络命名空间。
 
 控制器 API 和 Web UI 只应在可信 LAN / Tailscale 内访问，不能直接暴露公网；clean 节点专用代理仅供集群内其它容器访问。

@@ -18,7 +18,7 @@ spec:
   template:
     metadata:
       annotations:
-        eehub.mingz.top/mihomo-config-revision: clean-provider-1-v2
+        eehub.mingz.top/mihomo-config-revision: tun-gateway-v1
       labels:
         app: mihomo
         app.kubernetes.io/name: mihomo
@@ -46,10 +46,16 @@ spec:
             - name: config-volume
               mountPath: /root/.config/mihomo/config.yaml
               subPath: config.yaml
+            - name: tun-device
+              mountPath: /dev/net/tun
       volumes:
         - name: config-volume
           secret:
             secretName: mihomo-config
+        - name: tun-device
+          hostPath:
+            path: /dev/net/tun
+            type: CharDevice
 ---
 apiVersion: apps/v1
 kind: Deployment
