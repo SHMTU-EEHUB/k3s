@@ -36,11 +36,13 @@
   - `cli-proxy-api`：默认 Mihomo 节点 `7897`
 - 数据持久化：
   - PostgreSQL：`20Gi`，`longhorn-fast-1replica`
+  - Metapi 数据 PVC：`2Gi`，`longhorn-hdd-1replica`
   - Kiro 配置 PVC：`1Gi`，`longhorn-hdd-1replica`
   - CPA 数据 PVC：`2Gi`，`longhorn-hdd-1replica`
 
 ## 初始化说明
 
 - PostgreSQL 首次在空数据目录启动时，会执行 `ConfigMap/ai-postgresql-init` 中的脚本，创建 `axonhub` / `metapi` 数据库和对应用户。
+- `metapi` 额外挂载 `/app/data`，用于保留本地运行数据与非数据库文件状态。
 - `kiro-rs` 通过 initContainer 将 `config.json` 与初始 `credentials.json` 复制到可写 PVC，避免 Token 刷新后无法回写。
 - `cli-proxy-api` 通过 initContainer 将 `config.yaml` 复制到 PVC，并初始化持久化 `auths` 目录。
