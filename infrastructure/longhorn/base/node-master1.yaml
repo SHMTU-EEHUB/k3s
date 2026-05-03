@@ -19,7 +19,7 @@ spec:
       evictionRequested: false
       storageReserved: 33837466828
       tags:
-        - pg-fast
+        - fast
       diskType: filesystem
       diskDriver: ""
     hdd1-master1:

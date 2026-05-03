@@ -13,7 +13,7 @@
 - `infrastructure/argocd/base`：ArgoCD Helm values 与安装口径。
 - `infrastructure/sealed-secrets/base`：Sealed Secrets Helm values 与安装口径。
 - `infrastructure/mihomo/base`：Mihomo 网关、MetaCubeXD UI、NodePort Service、Headless Service、加密后的 `mihomo-config`。
-- `infrastructure/longhorn/base`：Longhorn StorageClass、单节点副本设置、`master1` 磁盘声明，以及 PostgreSQL 先系统 SSD、后迁 worker SSD 的策略。
+- `infrastructure/longhorn/base`：Longhorn StorageClass、单节点副本设置、`master1` 磁盘声明，以及系统 SSD 先纳入 `fast` 层、后迁 worker SSD 的策略。
 - `apps/cloudflare-ddns/base`：Cloudflare DDNS ConfigMap、Deployment、加密后的 `cloudflare-ddns-secret`。
 - `clusters/master-node`：当前单 Master 集群聚合入口。
 
