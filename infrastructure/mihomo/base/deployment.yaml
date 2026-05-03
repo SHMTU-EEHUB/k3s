@@ -18,7 +18,7 @@ spec:
   template:
     metadata:
       annotations:
-        eehub.mingz.top/mihomo-config-revision: clean-provider-1-v1
+        eehub.mingz.top/mihomo-config-revision: clean-provider-1-v2
       labels:
         app: mihomo
         app.kubernetes.io/name: mihomo
