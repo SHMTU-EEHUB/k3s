@@ -8,6 +8,8 @@ resources:
   - postgresql.yaml
   - axonhub.yaml
   - metapi.yaml
+  - aether-redis.yaml
+  - aether.yaml
   - kiro-rs.yaml
   - cli-proxy-api.yaml
   - ingress.yaml
