@@ -4,7 +4,7 @@
 
 ## 目录职责
 
-- `infrastructure/`：底层基础设施，例如 Longhorn、Mihomo。
+- `infrastructure/`：底层基础设施，例如 Longhorn、Tailscale、Mihomo。
 - `apps/`：业务与运维应用，例如 Cloudflare DDNS。
 - `clusters/`：目标集群聚合入口，例如当前 `master-node`。
 
@@ -14,9 +14,14 @@
 - `infrastructure/sealed-secrets/base`：Sealed Secrets Helm values 与安装口径。
 - `infrastructure/mihomo/base`：Mihomo 网关、MetaCubeXD UI、NodePort / ClusterIP / Headless Service、加密后的 `mihomo-config`。
 - `infrastructure/longhorn/base`：Longhorn StorageClass、单节点副本设置、`master1` 磁盘声明，以及系统 SSD 先纳入 `fast` 层、后迁 worker SSD 的策略。
+- `infrastructure/tailscale/base`：Tailscale Operator values、K3s Pod / Service CIDR 子网路由、API Server proxy 与 RBAC。
 - `apps/cloudflare-ddns/base`：Cloudflare DDNS ConfigMap、Deployment、加密后的 `cloudflare-ddns-secret`。
-- `apps/ai-services/base`：AI 服务组，包括共享 PostgreSQL（`longhorn-fast-1replica`）、AxonHub、Metapi、Kiro、CLIProxyAPI，以及加密后的 `secret-sealed.yaml`。
+- `apps/ai-services/base`：AI 服务组，包括共享 PostgreSQL（`longhorn-fast-1replica`）、AxonHub、Metapi、Aether（Rust Pioneer）+ Redis、Kiro、CLIProxyAPI，以及加密后的 `secret-sealed.yaml`。
 - `clusters/master-node`：当前单 Master 集群聚合入口。
+
+## 同步顺序注意
+
+`infrastructure/tailscale/base` 中的 `Connector`、`ProxyGroup`、`ProxyClass` 依赖 Tailscale Operator CRD。首次部署或重建时，应先按 `infrastructure/tailscale/base/README.md` 使用 Helm 安装 Operator，再同步 `clusters/master-node`。
 
 ## 敏感信息原则
 
@@ -24,7 +29,7 @@
 
 - Cloudflare API Token。
 - Mihomo 订阅链接、代理节点密码、UUID、私钥、控制器密钥。
-- AxonHub、Metapi、Kiro、CLIProxyAPI 的 API Key、管理 Token、数据库口令与 OAuth / Refresh Token。
-- Kubeconfig、K3s token、Tailscale Auth Key。
+- AxonHub、Metapi、Aether、Kiro、CLIProxyAPI 的 API Key、管理 Token、数据库口令与 OAuth / Refresh Token。
+- Kubeconfig、K3s token、Tailscale Auth Key、Tailscale OAuth Client Secret、Tailnet ACL 私有策略。
 
 当前仓库默认使用 Sealed Secrets 管理敏感信息。明文 Secret 只允许作为本地临时文件存在，生成 `SealedSecret` 后必须删除，不能提交。

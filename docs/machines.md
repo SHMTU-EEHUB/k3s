@@ -1,6 +1,6 @@
 # Machines
 
-> 硬件配置架构与当前状态。本文记录机器、磁盘、网络、K3s、Longhorn、Mihomo 的当前事实；安装 / 恢复步骤见 `docs/init.md`，组件原则见 `docs/basement.md`。
+> 硬件配置架构与当前状态。本文记录机器、磁盘、网络、K3s、Longhorn、Tailscale、Mihomo 的当前事实；安装 / 恢复步骤见 `docs/init.md`，组件原则见 `docs/basement.md`。
 
 ## 1. 架构概览
 
@@ -13,6 +13,7 @@
 | Kubernetes 发行版 | K3s                                                     |
 | CNI               | Flannel VXLAN                                           |
 | 控制平面入口      | `master1.eehub.mingz.top`                               |
+| Tailnet 访问      | Tailscale Operator 管理 API Server Proxy 与子网路由节点 |
 | 存储基础设施      | Longhorn，当前单节点运行，Worker 上线后再启用跨节点副本 |
 | 出站代理基础设施  | Mihomo / Clash，作为集群内集中式代理网关                |
 
@@ -48,24 +49,25 @@
 
 ## 5. K3s 集群状态
 
-| 项目                        | 当前配置                                     |
-| --------------------------- | -------------------------------------------- |
-| Kubernetes 发行版           | K3s                                          |
-| 当前控制平面节点            | `master1.eehub.mingz.top`                    |
-| 当前已上线 Worker           | 无                                           |
-| 当前 CNI                    | Flannel                                      |
-| Flannel backend             | VXLAN                                        |
-| Datastore                   | Embedded etcd，当前单 Server                 |
-| 网络策略能力                | K3s 默认网络策略控制器                       |
-| 节点域名后缀                | `eehub.mingz.top`                            |
-| Master 节点名               | `master1`                                    |
-| Master 域名                 | `master1.eehub.mingz.top`                    |
-| K3s API TLS SAN             | `master1.eehub.mingz.top`                    |
-| Pod 总网段 / Cluster CIDR   | IPv4：`172.24.0.0/16`；IPv6：`fd00:42::/56`  |
-| Service 网段 / Service CIDR | IPv4：`172.25.0.0/16`；IPv6：`fd00:43::/112` |
-| 当前 `master1` Pod CIDR     | IPv4：`172.24.0.0/24`；IPv6：`fd00:42::/64`  |
-| 网段规划原则                | 避开上游物理网络使用的 `10.x.x.x` 网段       |
-| 已禁用内置组件              | `traefik`、`servicelb`                       |
+| 项目                        | 当前配置                                                   |
+| --------------------------- | ---------------------------------------------------------- |
+| Kubernetes 发行版           | K3s                                                        |
+| 当前控制平面节点            | `master1.eehub.mingz.top`                                  |
+| 当前已上线 Worker           | 无                                                         |
+| 当前 CNI                    | Flannel                                                    |
+| Flannel backend             | VXLAN                                                      |
+| Datastore                   | Embedded etcd，当前单 Server                               |
+| 网络策略能力                | K3s 默认网络策略控制器                                     |
+| 节点域名后缀                | `eehub.mingz.top`                                          |
+| Master 节点名               | `master1`                                                  |
+| Master 域名                 | `master1.eehub.mingz.top`                                  |
+| K3s API TLS SAN             | `master1.eehub.mingz.top`                                  |
+| Tailnet 控制入口            | `ProxyGroup/eehub-k3s-api`，MagicDNS 名称由 Tailscale 分配 |
+| Pod 总网段 / Cluster CIDR   | IPv4：`172.24.0.0/16`；IPv6：`fd00:42::/56`                |
+| Service 网段 / Service CIDR | IPv4：`172.25.0.0/16`；IPv6：`fd00:43::/112`               |
+| 当前 `master1` Pod CIDR     | IPv4：`172.24.0.0/24`；IPv6：`fd00:42::/64`                |
+| 网段规划原则                | 避开上游物理网络使用的 `10.x.x.x` 网段                     |
+| 已禁用内置组件              | `traefik`、`servicelb`                                     |
 
 ## 6. 物理网络状态
 
@@ -150,6 +152,7 @@
 | 容器镜像           | `metacubex/mihomo:latest`           |
 | 镜像拉取策略       | `IfNotPresent`                      |
 | Linux capabilities | `NET_ADMIN`、`NET_RAW`              |
+| 设备挂载           | `/dev/net/tun`                      |
 | 资源 requests      | 128Mi 内存、100m CPU                |
 | 资源 limits        | 256Mi 内存、200m CPU                |
 
@@ -165,31 +168,69 @@
 
 ### 9.3 监听与网络配置
 
-| 项目                  | 当前配置                                   |
-| --------------------- | ------------------------------------------ |
-| 运行模式              | `rule`                                     |
-| IPv6                  | 启用                                       |
-| UDP                   | 启用                                       |
-| LAN 访问              | 启用，绑定所有地址                         |
-| Mixed 端口            | `7897`                                     |
-| Clean 节点专用端口    | `7896`；独立 `listeners` 入口              |
-| SOCKS 端口            | `7898`                                     |
-| HTTP 端口             | `7899`                                     |
-| 外部控制器            | `9097`；仅应通过可信网络访问               |
-| 控制器密钥            | 使用私有配置提供；本文不记录明文           |
-| DNS                   | 启用                                       |
-| DNS 增强模式          | `fake-ip`                                  |
-| DNS 劫持              | TUN 中启用 DNS hijack                      |
-| TUN                   | 启用                                       |
-| TUN stack             | `system`                                   |
-| TUN 设备名            | `Mihomo`                                   |
-| auto-route            | 启用                                       |
-| strict-route          | 关闭                                       |
-| auto-detect-interface | 启用                                       |
-| MTU                   | `9000`                                     |
-| 排除接口              | `tailscale0`                               |
-| 排除地址              | Tailscale 相关地址段；具体地址不在本文记录 |
+| 项目                  | 当前配置                                            |
+| --------------------- | --------------------------------------------------- |
+| 运行模式              | `rule`                                              |
+| IPv6                  | 启用                                                |
+| UDP                   | 启用                                                |
+| LAN 访问              | 启用，绑定所有地址                                  |
+| Mixed 端口            | `7897`                                              |
+| Clean 节点专用端口    | `7896`；独立 `listeners` 入口                       |
+| SOCKS 端口            | `7898`                                              |
+| HTTP 端口             | `7899`                                              |
+| 外部控制器            | `9097`；仅应通过可信网络访问                        |
+| 控制器密钥            | 使用私有配置提供；本文不记录明文                    |
+| DNS                   | 启用                                                |
+| DNS 增强模式          | `fake-ip`                                           |
+| DNS 劫持              | TUN 中启用 DNS hijack                               |
+| TUN                   | 启用                                                |
+| TUN stack             | `system`                                            |
+| TUN 设备名            | `Mihomo`                                            |
+| auto-route            | 启用                                                |
+| strict-route          | 关闭                                                |
+| auto-detect-interface | 启用                                                |
+| MTU                   | `9000`                                              |
+| 排除接口              | `tailscale0`                                        |
+| 排除地址              | Pod / Service 网段、常见内网网段与 Tailscale 地址段 |
 
 ### 9.4 敏感配置记录原则
 
 本文不记录 Mihomo 订阅链接、代理节点密码、UUID、Token、私钥、控制器密钥和临时 Bootstrap 外部代理地址；相关原则见 `docs/basement.md`。
+
+## 10. Tailscale 当前状态
+
+当前 Tailscale 方案使用 Tailscale Kubernetes Operator 管理集群内 Tailnet 节点。Operator 本体通过 Helm 安装；声明式资源保存在 `infrastructure/tailscale/base`，并由 `clusters/master-node` 聚合。
+
+### 10.1 Kubernetes 资源形态
+
+| 项目               | 当前配置                                                                |
+| ------------------ | ----------------------------------------------------------------------- |
+| Operator Namespace | `tailscale`                                                             |
+| Helm values        | `infrastructure/tailscale/base/values.yaml`                             |
+| 默认 Operator Tag  | `tag:k8s-operator`                                                      |
+| 默认 Proxy Tag     | `tag:k8s`                                                               |
+| ProxyClass         | `eehub-tailscale-proxy`                                                 |
+| 子网路由 Connector | `eehub-cluster-routes`                                                  |
+| K3s API ProxyGroup | `eehub-k3s-api`                                                         |
+| API Proxy 模式     | `auth`，通过 Tailnet identity impersonation 与 Kubernetes RBAC 控制权限 |
+
+### 10.2 Tailnet 暴露范围
+
+| 用途         | 暴露内容                                               |
+| ------------ | ------------------------------------------------------ |
+| Pod 网段     | IPv4：`172.24.0.0/16`；IPv6：`fd00:42::/56`            |
+| Service 网段 | IPv4：`172.25.0.0/16`；IPv6：`fd00:43::/112`           |
+| K3s 控制面   | `ProxyGroup/eehub-k3s-api` 提供 HTTPS API Server proxy |
+
+### 10.3 权限口径
+
+| Kubernetes 组         | 权限                 |
+| --------------------- | -------------------- |
+| `tailnet-k8s-admins`  | 绑定 `cluster-admin` |
+| `tailnet-k8s-readers` | 绑定 `view`          |
+
+Tailnet 用户或设备不会因为能连上 API proxy 就自动获得 Kubernetes 权限；需要在 Tailnet policy grants 中显式把用户组映射到上述 Kubernetes 组。
+
+### 10.4 敏感配置记录原则
+
+本文不记录 Tailscale OAuth Client Secret、Auth Key、Tailnet 名称、Tailnet ACL 私有规则、用户邮箱和设备地址；相关原则见 `docs/basement.md`。

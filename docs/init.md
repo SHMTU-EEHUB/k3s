@@ -1,6 +1,6 @@
 # Init
 
-> 从 0 安装 / 恢复 DevOps K3s 集群的路线图和验收清单。当前硬件与运行事实以 `docs/machines.md` 为准；Longhorn、Mihomo 的组件原则见 `docs/basement.md`。
+> 从 0 安装 / 恢复 DevOps K3s 集群的路线图和验收清单。当前硬件与运行事实以 `docs/machines.md` 为准；Longhorn、Tailscale、Mihomo 的组件原则见 `docs/basement.md`。
 
 ## 1. 目标状态
 
@@ -12,7 +12,7 @@
 - 所有节点禁用传统 Swap，并按 `docs/machines.md` 的内存规划启用 ZRAM：16GB 节点使用 8GB，8GB 节点使用 4GB。
 - K3s 使用 Flannel VXLAN 作为 CNI。
 - 控制平面入口、节点域名和 TLS SAN 使用 `eehub.mingz.top` 下的规划域名。
-- Tailscale 可用于可信外部访问和运维。
+- Tailscale 可用于可信外部访问和运维，并能访问 K3s Pod / Service 网段与控制 K3s。
 - Longhorn 可识别 HDD 数据层，并在 `worker1` 上线后识别 512GB NVMe 高速层。
 - Mihomo / Clash 作为集群内集中式出站代理运行。
 
@@ -42,7 +42,7 @@
 以下信息只应放在 Secret、私有配置或外部密码管理器中，不应提交到仓库：
 
 - Cloudflare Zone ID 与 API Token。
-- Tailscale Auth Key。
+- Tailscale OAuth Client ID / Secret、Auth Key 与 Tailnet policy 私有内容。
 - 校园网认证凭据。
 - K3s Worker 加入 token。
 - Mihomo 订阅链接、控制器密钥、节点密码、UUID、私钥。
@@ -85,7 +85,8 @@
 4. 禁用传统 Swap。
 5. 按物理内存一半启用 ZRAM。
 6. 启用 iSCSI / NFS / 文件系统相关依赖。
-7. IPv6 由 `dhcpcd` 管理：确认 `dhcpcd` 能在开启转发后恢复 IPv6 `/128` 地址与 RA 默认路由；若重启或断网恢复后默认路由丢失，再针对 `eth0` 显式配置 RA 接收策略。
+7. 为 Mihomo 路由注入 fallback 准备 TUN：加载 `tun` 模块，并确保宿主机存在 `/dev/net/tun` 字符设备。
+8. IPv6 由 `dhcpcd` 管理：确认 `dhcpcd` 能在开启转发后恢复 IPv6 `/128` 地址与 RA 默认路由；若重启或断网恢复后默认路由丢失，再针对 `eth0` 显式配置 RA 接收策略。
 
 验收：
 
@@ -108,7 +109,7 @@
 7. 为 Master 打控制平面标签。
 8. 确认 Flannel、CoreDNS、metrics-server 等基础组件正常。
 9. 部署 Cloudflare DDNS Agent。
-10. 安装并接入 Tailscale。
+10. 准备 Tailscale OAuth Client、Tailnet policy，并安装 Tailscale Kubernetes Operator。
 
 验收：
 
@@ -117,7 +118,7 @@
 - Flannel 与 CoreDNS 正常。
 - 控制平面域名解析正确。
 - 通过控制平面域名可以访问 K3s API Server。
-- Tailscale 节点在线。
+- Tailscale Operator 节点在线。
 
 ### 3.4 阶段四：接入 Worker
 
@@ -184,7 +185,30 @@
 - 测试 Pod 能挂载 PVC 并读写。
 - Worker 上线后，副本调度和重建行为符合预期。
 
-### 3.7 阶段七：部署 Mihomo / Clash
+### 3.7 阶段七：部署 Tailscale 访问入口
+
+部署步骤：
+
+1. 确认 Tailnet 已启用 MagicDNS / HTTPS。
+2. 确认 Tailnet policy 已配置 `tag:k8s-operator`、`tag:k8s`、路由 auto-approvers 和 API Server proxy grants。
+3. 准备 Tailscale OAuth Client ID / Secret，本地私有 values 或 Sealed Secret 不提交到仓库。
+4. 使用 `infrastructure/tailscale/base/values.yaml` 安装 Tailscale Kubernetes Operator。
+5. 同步或应用 `infrastructure/tailscale/base`，创建 `ProxyClass`、`Connector`、`ProxyGroup` 和 RBAC。
+6. 确认 `Connector/eehub-cluster-routes` 广告 Pod / Service CIDR；如未配置 auto-approvers，则在 Tailscale Admin Console 手动批准路由。
+7. 确认 `ProxyGroup/eehub-k3s-api` 输出 API Server proxy URL。
+8. 在 Tailnet 客户端接受路由；Linux 客户端需要显式接受子网路由。
+9. 使用 `tailscale configure kubeconfig` 生成通过 Tailscale API Server proxy 访问集群的 kubeconfig。
+
+验收：
+
+- Tailscale Operator Pod 正常运行。
+- Tailnet 中能看到 `eehub-k3s-routes-*` 与 `eehub-k3s-api-*` 节点。
+- Tailnet 客户端可访问测试 Pod IP 与 ClusterIP。
+- Tailnet 管理员可通过 API Server proxy 执行 `kubectl get nodes`。
+- Tailnet 只读用户不能越权操作 Kubernetes 资源。
+- Mihomo 不劫持 Tailscale 接口、地址段和控制流量。
+
+### 3.8 阶段八：部署 Mihomo / Clash
 
 部署步骤：
 
@@ -220,7 +244,7 @@
 - Longhorn 备份目标与访问凭据。
 - Kubernetes Secret、私有配置和上层工作负载凭据。
 - Mihomo 私有配置、订阅来源和控制器密钥。
-- Cloudflare DDNS 与 Tailscale 所需凭据。
+- Cloudflare DDNS 与 Tailscale OAuth / Auth Key / Tailnet policy 所需凭据。
 - 集群 manifests、Helm values 或其他部署配置的私有来源。
 
 ### 4.2 Master 重建 / 恢复
@@ -233,7 +257,7 @@
 2. 重装 Alpine Linux 并恢复主机名、网络、ZRAM、cgroups、iSCSI 等基础配置。
 3. 如有 K3s Server 数据备份，优先按备份恢复控制平面。
 4. 如无可用控制平面备份，则按从 0 安装流程重建 K3s Server，并重新接入 Worker。
-5. 恢复 Cloudflare DDNS、Tailscale 和私有 Secret。
+5. 恢复 Cloudflare DDNS、Tailscale Operator 和私有 Secret。
 6. 恢复 Longhorn 与 Mihomo。
 7. 执行最终验收清单。
 
@@ -286,6 +310,8 @@
 - [ ] Worker 通过域名访问 Master。
 - [ ] Flannel 正常。
 - [ ] Tailscale 可从可信外部网络访问。
+- [ ] Tailnet 客户端可访问 K3s Pod / Service 网段。
+- [ ] Tailnet 客户端可通过 API Server proxy 控制 K3s。
 - [ ] 认证网络断线后能恢复。
 
 ### 存储

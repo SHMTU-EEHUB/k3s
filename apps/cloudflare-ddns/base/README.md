@@ -20,5 +20,5 @@ Cloudflare 私有材料已改为 SealedSecret 管理：
 - 副本数：`1`
 - 调度：固定到控制平面节点
 - 更新周期：`@every 5m`
-- DNS 记录：`master1.eehub.mingz.top`、`*.eehub.mingz.top`、`metaapi.eehub.mingz.top`、`axonhub.eehub.mingz.top`、`mihomoui.eehub.mingz.top`
+- DNS 记录：`master1.eehub.mingz.top`、`*.eehub.mingz.top`、`ai.eehub.mingz.top`、`metaapi.eehub.mingz.top`、`axonhub.eehub.mingz.top`、`mihomoui.eehub.mingz.top`
 - 代理状态：`PROXIED=false`，当前按校内网 DNS-only / 伪 DDNS 使用
