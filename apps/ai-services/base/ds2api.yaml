@@ -73,7 +73,7 @@ spec:
               if [ ! -f /data/config.json ]; then
                 cp /secret/config.json /data/config.json
               fi
-              chmod 600 /data/config.json
+              chmod 644 /data/config.json
           volumeMounts:
             - name: data
               mountPath: /data
