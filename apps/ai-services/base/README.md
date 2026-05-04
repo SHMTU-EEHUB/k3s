@@ -5,7 +5,6 @@
 ## 包含服务
 
 - `StatefulSet/ai-postgresql`：AI 服务组共享 PostgreSQL，当前使用 `longhorn-fast-1replica`。
-- `Deployment/axonhub`：AI 分发 / 统一网关。
 - `Deployment/metapi`：中转站聚合、自动签到与统一代理入口。
 - `Deployment/aether`：Rust Pioneer 版 AI 网关，当前作为新的统一入口。
 - `Deployment/aether-redis`：Aether 专用 Redis。
@@ -25,7 +24,6 @@
 涉及的 Secret：
 
 - `ai-postgresql-secret`
-- `axonhub-secret`
 - `metapi-secret`
 - `aether-secret`
 - `ds2api-secret`
@@ -36,12 +34,12 @@
 ## 当前运行口径
 
 - 命名空间：`ai-services`
-- 暴露方式：服务本身默认使用 `ClusterIP`；通过 Traefik Ingress 暴露：
-  - `ai.eehub.mingz.top` → `Service/aether:8084`
-  - `metaapi.eehub.mingz.top` → `Service/metapi:4000`
-  - `axonhub.eehub.mingz.top` → `Service/axonhub:8090`
-  - `ds2api`：仅内部访问，`Service/ds2api:5001`
-  - `grok2api`：仅内部访问，`Service/grok2api:8000`
+- 暴露方式：
+  - `Service/aether` 使用 NodePort `30884`，可在可信 LAN / Tailscale 内通过 `100.100.1.2:30884` 访问。
+  - Traefik Ingress 仍提供域名入口：`ai.eehub.mingz.top` → `Service/aether:8084`，`metaapi.eehub.mingz.top` → `Service/metapi:4000`。
+  - `metapi`：除 Ingress 外不暴露 NodePort，`Service/metapi:4000` 保持 ClusterIP。
+  - `ds2api`：仅内部访问，`Service/ds2api:5001`。
+  - `grok2api`：仅内部访问，`Service/grok2api:8000`。
 - 出站代理：
   - `aether`：默认 Mihomo 节点 `7897`
   - `metapi`：默认 Mihomo 节点 `7897`
@@ -60,10 +58,10 @@
 
 ## 初始化说明
 
-- PostgreSQL 首次在空数据目录启动时，会执行 `ConfigMap/ai-postgresql-init` 中的脚本，创建 `axonhub` / `metapi` 数据库和对应用户。
+- PostgreSQL 首次在空数据目录启动时，会执行 `ConfigMap/ai-postgresql-init` 中的脚本，创建 `metapi` 数据库和对应用户。
 - `metapi` 额外挂载 `/app/data`，用于保留本地运行数据与非数据库文件状态。
 - `aether` 额外使用 initContainer 幂等创建 / 修正 `aether` 数据库与用户，兼容当前已运行的共享 PostgreSQL。
-- `aether` 当前使用上游 `ghcr.io/fawney19/aether:pre`，对应 Rust Pioneer 路线；保留 `axonhub` 清单，避免切换期直接删除旧入口。
+- `aether` 当前使用上游 `ghcr.io/fawney19/aether:pre`，对应 Rust Pioneer 路线。
 - `ds2api` 通过 initContainer 首次将 Secret 中的 `config.json` 复制到 PVC，后续运行期 token 刷新写回 `/data/config.json`，避免重启后丢失状态。
 - `kiro-rs` 通过 initContainer 将 `config.json` 与初始 `credentials.json` 复制到可写 PVC，避免 Token 刷新后无法回写。
 - `cli-proxy-api` 通过 initContainer 将 `config.yaml` 复制到 PVC，并初始化持久化 `auths` 目录。

@@ -222,11 +222,11 @@
 2. 在无法直接拉取镜像时，可临时借用可信局域网代理完成 Bootstrap，但临时代理地址不得写入仓库。
 3. 拉取或预热 `metacubex/mihomo:latest` 镜像。
 4. 部署 `clash-config`、`clash-proxy` 与 `mihomo`。
-5. 按 `docs/machines.md` 的当前形态部署代理 NodePort、控制器 API 和 Web UI。
+5. 按 `docs/machines.md` 的当前形态部署代理 ClusterIP、控制器 API NodePort 和 Web UI NodePort。
 6. 确认 `clash-proxy` Endpoints 指向 Mihomo Pod。
 7. 验证 Mixed、SOCKS、HTTP、控制器 API 和 Web UI 端口与 `docs/machines.md` 一致。
 8. 清理临时 Bootstrap 代理配置。
-9. 如需让宿主机 / Worker 拉镜像走集群内代理，配置其代理入口指向 Mihomo Mixed 代理 NodePort。
+9. 如需让宿主机 / Worker 拉镜像走代理，需另行配置受控入口；默认不再暴露 Mihomo Mixed 代理 NodePort。
 10. 为需要代理的业务配置显式代理环境变量或路由注入。
 
 验收：

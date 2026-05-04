@@ -32,10 +32,7 @@ data:
     set -eu
 
     psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" \
-      --set=axonhub_password="$AXONHUB_DB_PASSWORD" \
       --set=metapi_password="$METAPI_DB_PASSWORD" <<'SQL'
-    CREATE USER axonhub WITH PASSWORD :'axonhub_password';
-    CREATE DATABASE axonhub OWNER axonhub;
     CREATE USER metapi WITH PASSWORD :'metapi_password';
     CREATE DATABASE metapi OWNER metapi;
     SQL
@@ -83,11 +80,6 @@ spec:
                 secretKeyRef:
                   name: ai-postgresql-secret
                   key: POSTGRES_PASSWORD
-            - name: AXONHUB_DB_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: ai-postgresql-secret
-                  key: AXONHUB_DB_PASSWORD
             - name: METAPI_DB_PASSWORD
               valueFrom:
                 secretKeyRef:

@@ -11,10 +11,9 @@
 
 ## 当前访问口径
 
-- `argocd-server` Service 类型：`NodePort`
-- HTTP NodePort：`30930`
+- `argocd-server` Service 类型：`ClusterIP`
 
-当前 values 使用 `server.insecure=true`，适合先在可信 LAN / Tailscale 内快速启用。后续如需正式暴露，再接入 Ingress / TLS。
+当前 values 使用 `server.insecure=true`。日常不再通过 NodePort 暴露 ArgoCD；如需临时访问，可通过 `kubectl port-forward` 或在可信网络内另行配置受控入口。
 
 ## GitHub 访问
 

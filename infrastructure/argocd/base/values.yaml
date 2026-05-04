@@ -8,8 +8,7 @@ configs:
 server:
   replicas: 1
   service:
-    type: NodePort
-    nodePortHttp: 30930
+    type: ClusterIP
   resources:
     requests:
       cpu: 100m

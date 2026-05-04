@@ -31,13 +31,3 @@ spec:
                 name: metapi
                 port:
                   number: 4000
-    - host: axonhub.eehub.mingz.top
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: axonhub
-                port:
-                  number: 8090

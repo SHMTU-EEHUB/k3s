@@ -12,7 +12,7 @@
 ## DevOps / GitOps 入口
 
 - `infrastructure/`：底层基础设施，例如 ArgoCD、Sealed Secrets、Longhorn、Tailscale、Mihomo。
-- `apps/`：业务与运维应用，例如 Cloudflare DDNS、AI 服务组（AxonHub / Metapi / Aether / Kiro / CLIProxyAPI / Grok2API）。
+- `apps/`：业务与运维应用，例如 Cloudflare DDNS、AI 服务组（Metapi / Aether / Kiro / CLIProxyAPI / Grok2API）。
 - `clusters/master-node/`：当前 `master1` 单节点阶段的集群聚合入口。
 
 历史聊天记录和旧 K8s 方案保存在 `archive/` 下，仅用于追溯。

@@ -6,7 +6,6 @@ resources:
   - secret-sealed.yaml
   - namespace.yaml
   - postgresql.yaml
-  - axonhub.yaml
   - metapi.yaml
   - aether-redis.yaml
   - aether.yaml
