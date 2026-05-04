@@ -199,38 +199,50 @@
 
 ## 10. Tailscale 当前状态
 
-当前 Tailscale 方案使用 Tailscale Kubernetes Operator 管理集群内 Tailnet 节点。Operator 本体通过 Helm 安装；声明式资源保存在 `infrastructure/tailscale/base`，并由 `clusters/master-node` 聚合。
+当前 Tailscale 方案为**主机级安装**：直接在 `master1` 上通过 `apk` 安装 Tailscale，以 OpenRC 服务方式运行，不使用 Kubernetes Operator。
 
-### 10.1 Kubernetes 资源形态
+### 10.1 节点信息
 
-| 项目               | 当前配置                                                                |
-| ------------------ | ----------------------------------------------------------------------- |
-| Operator Namespace | `tailscale`                                                             |
-| Helm values        | `infrastructure/tailscale/base/values.yaml`                             |
-| 默认 Operator Tag  | `tag:k8s-operator`                                                      |
-| 默认 Proxy Tag     | `tag:k8s`                                                               |
-| ProxyClass         | `eehub-tailscale-proxy`                                                 |
-| 子网路由 Connector | `eehub-cluster-routes`                                                  |
-| K3s API ProxyGroup | `eehub-k3s-api`                                                         |
-| API Proxy 模式     | `auth`，通过 Tailnet identity impersonation 与 Kubernetes RBAC 控制权限 |
+| 项目           | 当前值                                                       |
+| -------------- | ------------------------------------------------------------ |
+| 安装方式       | Alpine apk：`tailscale tailscale-openrc`                     |
+| 服务管理       | OpenRC，`tailscale`，已加入 `default` runlevel               |
+| Tailnet 节点名 | `k3s-master`                                                 |
+| Tailnet IPv4   | `100.100.1.2`                                                |
+| Tailnet IPv6   | `fd7a:115c:a1e0::239:2363`                                   |
+| 子网路由广告   | `172.24.0.0/16`（Pod CIDR）、`172.25.0.0/16`（Service CIDR） |
+| 路由批准状态   | 已在 Tailscale Admin Console 批准                            |
+| SSH 入口       | `ssh root@100.100.1.2`                                       |
 
-### 10.2 Tailnet 暴露范围
+### 10.2 Tailnet 访问入口
 
-| 用途         | 暴露内容                                               |
-| ------------ | ------------------------------------------------------ |
-| Pod 网段     | IPv4：`172.24.0.0/16`；IPv6：`fd00:42::/56`            |
-| Service 网段 | IPv4：`172.25.0.0/16`；IPv6：`fd00:43::/112`           |
-| K3s 控制面   | `ProxyGroup/eehub-k3s-api` 提供 HTTPS API Server proxy |
+#### 节点管理
 
-### 10.3 权限口径
+| 用途             | 地址                                    |
+| ---------------- | --------------------------------------- |
+| SSH 登录 master1 | `root@100.100.1.2` 或 `root@k3s-master` |
 
-| Kubernetes 组         | 权限                 |
-| --------------------- | -------------------- |
-| `tailnet-k8s-admins`  | 绑定 `cluster-admin` |
-| `tailnet-k8s-readers` | 绑定 `view`          |
+#### 管理服务 NodePort
 
-Tailnet 用户或设备不会因为能连上 API proxy 就自动获得 Kubernetes 权限；需要在 Tailnet policy grants 中显式把用户组映射到上述 Kubernetes 组。
+| 服务               | 地址                | 用途                 |
+| ------------------ | ------------------- | -------------------- |
+| Mihomo API         | `100.100.1.2:30910` | Mihomo 控制 API      |
+| Mihomo UI          | `100.100.1.2:30911` | Mihomo Web UI        |
+| Mihomo Mixed Proxy | `100.100.1.2:30789` | HTTP/HTTPS 代理入口  |
+| ArgoCD HTTP        | `100.100.1.2:30930` | ArgoCD 管理 UI       |
+| ArgoCD HTTPS       | `100.100.1.2:30443` | ArgoCD HTTPS 管理 UI |
 
-### 10.4 敏感配置记录原则
+#### 服务直连（ClusterIP，经子网路由可达）
 
-本文不记录 Tailscale OAuth Client Secret、Auth Key、Tailnet 名称、Tailnet ACL 私有规则、用户邮箱和设备地址；相关原则见 `docs/basement.md`。
+| 服务              | ClusterIP        | 端口   |
+| ----------------- | ---------------- | ------ |
+| Metapi            | `172.25.202.34`  | `4000` |
+| AxonHub           | `172.25.189.130` | `8090` |
+| Aether            | `172.25.165.45`  | `8084` |
+| CLI Proxy API     | `172.25.68.30`   | `8317` |
+| Kiro RS           | `172.25.14.63`   | `8990` |
+| Longhorn Frontend | `172.25.241.144` | `80`   |
+
+### 10.3 敏感配置记录原则
+
+本文不记录 Tailscale Auth Key、Tailnet 名称、Tailnet ACL 私有规则与设备地址；相关原则见 `docs/basement.md`。

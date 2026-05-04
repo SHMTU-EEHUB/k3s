@@ -8,6 +8,8 @@ archive/
 *.local.yaml
 *.private.yaml
 *.secret.yaml
+*.secret.txt
+*.secret.json
 kubeconfig
 kubeconfig.*
 
