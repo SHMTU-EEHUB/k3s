@@ -13,4 +13,5 @@ resources:
   - ds2api.yaml
   - kiro-rs.yaml
   - cli-proxy-api.yaml
+  - grok2api.yaml
   - ingress.yaml

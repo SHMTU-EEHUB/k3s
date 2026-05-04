@@ -1,0 +1,153 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: grok2api
+  namespace: ai-services
+  labels:
+    app: grok2api
+    app.kubernetes.io/name: grok2api
+    app.kubernetes.io/component: grok-gateway
+    app.kubernetes.io/part-of: eehub-ai-services
+spec:
+  type: ClusterIP
+  selector:
+    app: grok2api
+  ports:
+    - name: http
+      protocol: TCP
+      port: 8000
+      targetPort: 8000
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: grok2api-data
+  namespace: ai-services
+  labels:
+    app.kubernetes.io/name: grok2api
+    app.kubernetes.io/component: grok-gateway
+    app.kubernetes.io/part-of: eehub-ai-services
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: longhorn-hdd-1replica
+  resources:
+    requests:
+      storage: 5Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: grok2api
+  namespace: ai-services
+  labels:
+    app: grok2api
+    app.kubernetes.io/name: grok2api
+    app.kubernetes.io/component: grok-gateway
+    app.kubernetes.io/part-of: eehub-ai-services
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: grok2api
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: grok2api
+        app.kubernetes.io/name: grok2api
+        app.kubernetes.io/component: grok-gateway
+        app.kubernetes.io/part-of: eehub-ai-services
+    spec:
+      automountServiceAccountToken: false
+      initContainers:
+        - name: prepare-config
+          image: busybox:1.36
+          imagePullPolicy: IfNotPresent
+          command:
+            - sh
+            - -ec
+            - |
+              set -eu
+              mkdir -p /storage/data /storage/logs
+              bootstrap_version="$(cat /secret/bootstrap-version)"
+              current_version=""
+              if [ -f /storage/data/.bootstrap-version ]; then
+                current_version="$(cat /storage/data/.bootstrap-version)"
+              fi
+              if [ ! -f /storage/data/config.toml ] || [ "$current_version" != "$bootstrap_version" ]; then
+                cp /secret/config.toml /storage/data/config.toml
+                printf '%s' "$bootstrap_version" > /storage/data/.bootstrap-version
+              fi
+              chmod 600 /storage/data/config.toml /storage/data/.bootstrap-version
+          volumeMounts:
+            - name: data
+              mountPath: /storage
+            - name: secret-config
+              mountPath: /secret
+              readOnly: true
+      containers:
+        - name: grok2api
+          image: ghcr.io/chenyme/grok2api:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8000
+              protocol: TCP
+          env:
+            - name: TZ
+              value: Asia/Shanghai
+            - name: LOG_LEVEL
+              value: INFO
+            - name: LOG_FILE_ENABLED
+              value: "true"
+            - name: SERVER_HOST
+              value: 0.0.0.0
+            - name: SERVER_PORT
+              value: "8000"
+            - name: SERVER_WORKERS
+              value: "1"
+            - name: ACCOUNT_STORAGE
+              value: local
+            - name: ACCOUNT_LOCAL_PATH
+              value: /storage/data/accounts.db
+            - name: CONFIG_LOCAL_PATH
+              value: /storage/data/config.toml
+            - name: DATA_DIR
+              value: /storage/data
+            - name: LOG_DIR
+              value: /storage/logs
+          resources:
+            requests:
+              cpu: 200m
+              memory: 256Mi
+            limits:
+              cpu: "1"
+              memory: 1Gi
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 6
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 40
+            periodSeconds: 20
+            timeoutSeconds: 5
+            failureThreshold: 3
+          volumeMounts:
+            - name: data
+              mountPath: /storage
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: grok2api-data
+        - name: secret-config
+          secret:
+            secretName: grok2api-secret
