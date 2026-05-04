@@ -10,6 +10,7 @@ resources:
   - metapi.yaml
   - aether-redis.yaml
   - aether.yaml
+  - ds2api.yaml
   - kiro-rs.yaml
   - cli-proxy-api.yaml
   - ingress.yaml
