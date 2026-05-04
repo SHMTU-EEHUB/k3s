@@ -64,16 +64,13 @@ spec:
                 -U "$POSTGRES_USER" \
                 -d "$POSTGRES_DB" \
                 --set=aether_password="$AETHER_DB_PASSWORD" <<'SQL'
-              DO
-              $do$
-              BEGIN
-                IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'aether') THEN
-                  EXECUTE format('CREATE ROLE aether LOGIN PASSWORD %L', :'aether_password');
-                ELSE
-                  EXECUTE format('ALTER ROLE aether WITH LOGIN PASSWORD %L', :'aether_password');
-                END IF;
-              END
-              $do$;
+              SELECT format('CREATE ROLE aether LOGIN PASSWORD %L', :'aether_password')
+              WHERE NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'aether')
+              \gexec
+
+              SELECT format('ALTER ROLE aether LOGIN PASSWORD %L', :'aether_password')
+              WHERE EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'aether')
+              \gexec
 
               SELECT 'CREATE DATABASE aether OWNER aether'
               WHERE NOT EXISTS (SELECT 1 FROM pg_database WHERE datname = 'aether')
