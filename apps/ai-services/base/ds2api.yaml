@@ -70,9 +70,11 @@ spec:
             - -ec
             - |
               set -eu
-              cp /secret/config.json /data/config.json
-              chown 999:999 /data/config.json
-              chmod 664 /data/config.json
+              if [ ! -f /data/config.json ]; then
+                cp /secret/config.json /data/config.json
+                chown 999:999 /data/config.json
+                chmod 664 /data/config.json
+              fi
           volumeMounts:
             - name: data
               mountPath: /data
