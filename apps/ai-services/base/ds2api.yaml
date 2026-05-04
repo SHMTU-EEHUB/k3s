@@ -63,66 +63,16 @@ spec:
       automountServiceAccountToken: false
       initContainers:
         - name: prepare-config
-          image: python:3.12-alpine
+          image: busybox:1.36
           imagePullPolicy: IfNotPresent
           command:
             - sh
             - -ec
             - |
-              python - <<'PY'
-              import json
-              import os
-              from pathlib import Path
-
-              def identifier(acc):
-                  email = str(acc.get('email', '')).strip().lower()
-                  if email:
-                      return email
-                  mobile = str(acc.get('mobile', '')).strip()
-                  return mobile
-
-              data_path = Path('/data/config.json')
-              secret_path = Path('/secret/config.json')
-              with secret_path.open('r', encoding='utf-8') as f:
-                  secret = json.load(f)
-              existing = {}
-              if data_path.exists():
-                  try:
-                      with data_path.open('r', encoding='utf-8') as f:
-                          existing = json.load(f)
-                  except Exception:
-                      existing = {}
-
-              existing_map = {}
-              for acc in existing.get('accounts', []):
-                  idn = identifier(acc)
-                  if idn:
-                      existing_map[idn] = acc
-
-              merged_accounts = []
-              for acc in secret.get('accounts', []):
-                  item = dict(acc)
-                  old = existing_map.get(identifier(item))
-                  if old:
-                      for key in ('token', 'proxy_id'):
-                          if old.get(key):
-                              item[key] = old.get(key)
-                      for key in ('name', 'remark'):
-                          if not item.get(key) and old.get(key):
-                              item[key] = old.get(key)
-                  merged_accounts.append(item)
-
-              base = existing if (data_path.exists() and existing) else secret
-              base['accounts'] = merged_accounts
-
-              tmp = data_path.with_suffix('.json.tmp')
-              with tmp.open('w', encoding='utf-8') as f:
-                  json.dump(base, f, ensure_ascii=False, indent=2)
-                  f.write('\n')
-              os.replace(tmp, data_path)
-              os.chown(data_path, 999, 999)
-              os.chmod(data_path, 0o664)
-              PY
+              set -eu
+              cp /secret/config.json /data/config.json
+              chown 999:999 /data/config.json
+              chmod 664 /data/config.json
           volumeMounts:
             - name: data
               mountPath: /data
