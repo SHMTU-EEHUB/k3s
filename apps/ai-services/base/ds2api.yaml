@@ -64,7 +64,7 @@ spec:
       initContainers:
         - name: prepare-config
           image: busybox:1.36
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           command:
             - sh
             - -ec
@@ -84,7 +84,7 @@ spec:
       containers:
         - name: ds2api
           image: ghcr.io/cjackhwang/ds2api:latest
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           ports:
             - name: http
               containerPort: 5001

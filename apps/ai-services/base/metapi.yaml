@@ -64,7 +64,7 @@ spec:
       containers:
         - name: metapi
           image: 1467078763/metapi:latest
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           ports:
             - name: http
               containerPort: 4000
