@@ -1,0 +1,41 @@
+apiVersion: longhorn.io/v1beta2
+kind: Node
+metadata:
+  name: worker1.eehub.mingz.top
+  namespace: longhorn-system
+  labels:
+    app.kubernetes.io/name: longhorn
+    app.kubernetes.io/part-of: eehub-infra
+spec:
+  name: worker1.eehub.mingz.top
+  allowScheduling: true
+  evictionRequested: false
+  instanceManagerCPURequest: 0
+  tags: []
+  disks:
+    default-disk-61f9d2e7b17a5a0c:
+      path: /var/lib/longhorn/
+      allowScheduling: true
+      evictionRequested: false
+      storageReserved: 149449504358
+      tags: []
+      diskType: filesystem
+      diskDriver: ""
+    hdd1-worker1:
+      path: /mnt/storage/sda
+      allowScheduling: true
+      evictionRequested: false
+      storageReserved: 53687091200
+      tags:
+        - HDD
+      diskType: filesystem
+      diskDriver: ""
+    hdd2-worker1:
+      path: /mnt/storage/sdb
+      allowScheduling: true
+      evictionRequested: false
+      storageReserved: 53687091200
+      tags:
+        - HDD
+      diskType: filesystem
+      diskDriver: ""

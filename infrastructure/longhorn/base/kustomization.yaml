@@ -5,3 +5,4 @@ resources:
   - settings.yaml
   - storageclass.yaml
   - node-master1.yaml
+  - node-worker1.yaml
