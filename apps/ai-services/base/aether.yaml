@@ -48,7 +48,7 @@ spec:
       initContainers:
         - name: init-aether-database
           image: postgres:16-alpine
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           command:
             - sh
             - -ec
@@ -111,7 +111,7 @@ spec:
       containers:
         - name: aether
           image: ghcr.io/fawney19/aether:pre
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           ports:
             - name: http
               containerPort: 8084

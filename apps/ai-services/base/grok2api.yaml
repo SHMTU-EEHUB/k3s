@@ -64,7 +64,7 @@ spec:
       initContainers:
         - name: prepare-config
           image: busybox:1.36
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           command:
             - sh
             - -ec
@@ -90,7 +90,7 @@ spec:
       containers:
         - name: grok2api
           image: ghcr.io/chenyme/grok2api:latest
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           ports:
             - name: http
               containerPort: 8000

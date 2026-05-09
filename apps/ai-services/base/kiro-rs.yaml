@@ -64,7 +64,7 @@ spec:
       initContainers:
         - name: prepare-config
           image: busybox:1.36
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           command:
             - sh
             - -c
@@ -84,7 +84,7 @@ spec:
       containers:
         - name: kiro-rs
           image: ghcr.io/hank9999/kiro-rs:latest
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           ports:
             - name: http
               containerPort: 8990
