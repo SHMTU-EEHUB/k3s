@@ -18,7 +18,8 @@ spec:
       allowScheduling: true
       evictionRequested: false
       storageReserved: 149449504358
-      tags: []
+      tags:
+        - fast
       diskType: filesystem
       diskDriver: ""
     hdd1-worker1:
