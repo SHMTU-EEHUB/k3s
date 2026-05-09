@@ -64,7 +64,7 @@ spec:
       containers:
         - name: redis
           image: redis:7-alpine
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           command:
             - sh
             - -ec
