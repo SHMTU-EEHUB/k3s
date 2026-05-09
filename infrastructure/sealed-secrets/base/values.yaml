@@ -1,7 +1,7 @@
 fullnameOverride: sealed-secrets-controller
 
 image:
-  pullPolicy: IfNotPresent
+  pullPolicy: Always
 
 resources:
   requests:
