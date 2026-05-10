@@ -5,6 +5,7 @@
 ## 包含内容
 
 - `../../infrastructure/longhorn/base`
+- `../../infrastructure/authentik/base`
 - `../../infrastructure/mihomo/base`
 - `../../apps/cloudflare-ddns/base`
 - `../../apps/ai-services/base`
@@ -20,7 +21,10 @@ Sealed Secrets Controller 由 Helm 管理，配置见 `../../infrastructure/seal
 ## 上线前检查
 
 - Sealed Secrets Controller 已通过 Helm 安装。
+- `authentik-config` 由 `infrastructure/authentik/base/secret-sealed.yaml` 解封生成。
 - `cloudflare-ddns-secret` 由 `apps/cloudflare-ddns/base/secret-sealed.yaml` 解封生成。
 - `mihomo-config` 由 `infrastructure/mihomo/base/secret-sealed.yaml` 解封生成。
 - `ai-postgresql-secret`、`metapi-secret`、`aether-secret`、`ds2api-secret`、`kiro-rs-secret`、`cli-proxy-api-secret`、`grok2api-secret` 由 `apps/ai-services/base/secret-sealed.yaml` 解封生成。
 - Longhorn CRD 已由 Helm 安装完成。
+
+Authentik Helm Release 建议使用 `../../infrastructure/authentik/base/values.yaml` 手工执行 `helm upgrade --install`，与当前 ArgoCD / Sealed Secrets 的 DevOps 口径保持一致。

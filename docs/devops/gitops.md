@@ -12,6 +12,7 @@
 
 - `infrastructure/argocd/base`：ArgoCD Helm values 与安装口径。
 - `infrastructure/sealed-secrets/base`：Sealed Secrets Helm values 与安装口径。
+- `infrastructure/authentik/base`：Authentik 命名空间、Helm values、加密后的 `authentik-config`，用于统一登录入口。
 - `infrastructure/mihomo/base`：Mihomo 网关、MetaCubeXD UI、控制器 / Web UI NodePort、ClusterIP / Headless Service、加密后的 `mihomo-config`。
 - `infrastructure/longhorn/base`：Longhorn StorageClass、单节点副本设置、`master1` 磁盘声明，以及系统 SSD 先纳入 `fast` 层、后迁 worker SSD 的策略。
 
@@ -24,6 +25,7 @@
 以下内容不能提交明文：
 
 - Cloudflare API Token。
+- Authentik `secret_key`、数据库口令、SMTP 口令、OIDC / OAuth Client Secret。
 - Mihomo 订阅链接、代理节点密码、UUID、私钥、控制器密钥。
 - Metapi、Aether、Kiro、CLIProxyAPI、Grok2API 的 API Key、管理 Token、数据库口令与 OAuth / Refresh Token。
 - Kubeconfig、K3s token、Tailscale Auth Key、Tailnet ACL 私有策略。
