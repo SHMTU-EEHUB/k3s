@@ -51,7 +51,7 @@ spec:
     matchLabels:
       app: aether-redis
   strategy:
-    type: RollingUpdate
+    type: Recreate
   template:
     metadata:
       labels:
