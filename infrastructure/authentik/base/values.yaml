@@ -1,0 +1,50 @@
+authentik:
+  existingSecret:
+    secretName: authentik-config
+  error_reporting:
+    enabled: false
+  postgresql:
+    host: authentik-postgresql
+    name: authentik
+    user: authentik
+    port: 5432
+
+server:
+  ingress:
+    enabled: true
+    ingressClassName: traefik
+    annotations:
+      traefik.ingress.kubernetes.io/router.entrypoints: web
+    hosts:
+      - auth.eehub.mingz.top
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+worker:
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+postgresql:
+  enabled: true
+  auth:
+    username: authentik
+    database: authentik
+    existingSecret: authentik-config
+    secretKeys:
+      adminPasswordKey: postgres-password
+      userPasswordKey: password
+  primary:
+    persistence:
+      enabled: true
+      storageClass: longhorn-fast-1replica
+      size: 10Gi
