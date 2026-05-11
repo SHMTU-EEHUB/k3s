@@ -1,0 +1,32 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: eehub-authentik
+  namespace: argocd
+  labels:
+    app.kubernetes.io/name: eehub-authentik
+    app.kubernetes.io/part-of: eehub-gitops
+  annotations:
+    argocd.argoproj.io/sync-wave: "20"
+spec:
+  project: default
+  sources:
+    - repoURL: https://charts.goauthentik.io
+      chart: authentik
+      targetRevision: 2026.2.2
+      helm:
+        releaseName: authentik
+        valueFiles:
+          - $values/infrastructure/authentik/base/values.yaml
+    - repoURL: https://github.com/SHMTU-EEHUB/k3s.git
+      targetRevision: main
+      ref: values
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: authentik
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

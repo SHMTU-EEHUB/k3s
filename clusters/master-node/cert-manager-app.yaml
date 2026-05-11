@@ -1,0 +1,33 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: eehub-cert-manager
+  namespace: argocd
+  labels:
+    app.kubernetes.io/name: eehub-cert-manager
+    app.kubernetes.io/part-of: eehub-gitops
+  annotations:
+    argocd.argoproj.io/sync-wave: "-40"
+spec:
+  project: default
+  sources:
+    - repoURL: https://charts.jetstack.io
+      chart: cert-manager
+      targetRevision: v1.20.2
+      helm:
+        releaseName: cert-manager
+        valueFiles:
+          - $values/infrastructure/cert-manager/base/values.yaml
+    - repoURL: https://github.com/SHMTU-EEHUB/k3s.git
+      targetRevision: main
+      ref: values
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: cert-manager
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - SkipDryRunOnMissingResource=true
