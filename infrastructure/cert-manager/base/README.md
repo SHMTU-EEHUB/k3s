@@ -1,10 +1,11 @@
 # cert-manager
 
-当前使用官方 Helm Chart 安装 cert-manager，并把 Cloudflare DNS-01 所需的 Secret 与 Let’s Encrypt ClusterIssuer 一起纳入仓库。
+当前由 ArgoCD child Application 安装 cert-manager Helm Chart，并把 Cloudflare DNS-01 所需的 Secret 与 Let’s Encrypt ClusterIssuer 一起纳入仓库。
 
-## 建议安装口径
+## 当前 GitOps 口径
 
-- Chart：`oci://quay.io/jetstack/charts/cert-manager`
+- Child Application：`clusters/master-node/cert-manager-app.yaml`
+- Chart：`cert-manager`
 - Version：`v1.20.2`
 - Namespace：`cert-manager`
 - Release：`cert-manager`
@@ -19,33 +20,12 @@
 - Secret 管理：Sealed Secrets
 - 证书签发：同时保留 `letsencrypt-staging` 与 `letsencrypt-prod`
 
-## 安装步骤
+## ArgoCD 同步方式
 
-1. 先确认 Sealed Secrets Controller 已安装。
-2. 使用仓库中的 values 安装 / 升级 cert-manager Helm Release：
-
-   ```bash
-   helm upgrade --install cert-manager oci://quay.io/jetstack/charts/cert-manager \
-     --version v1.20.2 \
-     -n cert-manager \
-     --create-namespace \
-     -f infrastructure/cert-manager/base/values.yaml
-   ```
-
-3. 确认 cert-manager CRD 与 Pod 已就绪：
-
-   ```bash
-   kubectl get crd | grep cert-manager
-   kubectl get pods -n cert-manager
-   ```
-
-4. 再应用本目录资源：
-
-   ```bash
-   kubectl apply -k infrastructure/cert-manager/base
-   ```
-
-5. 确认 ClusterIssuer Ready：
+1. Root Application `clusters/master-node/sync-app.yaml` 同步 `clusters/master-node`。
+2. `clusters/master-node/cert-manager-app.yaml` 由 ArgoCD 自动创建并接管 Helm release。
+3. `infrastructure/cert-manager/base/` 只保留 bootstrap namespace、SealedSecret、ClusterIssuer 与 values。
+4. 确认 ClusterIssuer Ready：
 
    ```bash
    kubectl get clusterissuer
@@ -73,6 +53,6 @@ kubeseal --format yaml --scope strict \
 
 ## 使用说明
 
-- 本目录依赖 cert-manager CRD，不能在 cert-manager Helm Release 安装前直接应用。
+- 本目录依赖 cert-manager CRD，ClusterIssuer 资源会在 cert-manager child Application 就绪后由 ArgoCD 同步。
 - 当前默认给 `ai.eehub.mingz.top` 与 `auth.eehub.mingz.top` 开 HTTPS。
 - 为了避免一次切换导致现有入口中断，Ingress 暂时同时保留 `web` 与 `websecure`，不强制 HTTP 301 跳转。
