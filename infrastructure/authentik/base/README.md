@@ -46,6 +46,8 @@
 
 当前提交的 `secret-sealed.yaml` 已包含一组随机生成的初始化密钥，只保存了加密后的 SealedSecret，不包含明文。
 
+由于当前 Helm values 使用了 `authentik.existingSecret.secretName: authentik-config`，AuthentiK 运行时会直接从这个 Secret 读取环境变量。因此除了密码类字段，还必须把 PostgreSQL 连接参数一并写进 Secret，否则会退回默认 `localhost:5432`。
+
 如需轮换，请在本地基于 `secret.example.yaml` 生成新的明文 Secret，再重新封装为 `secret-sealed.yaml`：
 
 ```bash
@@ -58,6 +60,10 @@ kubeseal --format yaml --scope strict \
 建议本地 `secret.private.yaml` 至少包含以下键：
 
 - `AUTHENTIK_SECRET_KEY`
+- `AUTHENTIK_POSTGRESQL__HOST`
+- `AUTHENTIK_POSTGRESQL__NAME`
+- `AUTHENTIK_POSTGRESQL__USER`
+- `AUTHENTIK_POSTGRESQL__PORT`
 - `AUTHENTIK_POSTGRESQL__PASSWORD`
 - `postgres-password`
 - `password`
