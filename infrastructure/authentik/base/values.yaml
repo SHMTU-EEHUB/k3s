@@ -14,9 +14,14 @@ server:
     enabled: true
     ingressClassName: traefik
     annotations:
-      traefik.ingress.kubernetes.io/router.entrypoints: web
+      cert-manager.io/cluster-issuer: letsencrypt-prod
+      traefik.ingress.kubernetes.io/router.entrypoints: web,websecure
     hosts:
       - auth.eehub.mingz.top
+    tls:
+      - secretName: auth-eehub-mingz-top-tls
+        hosts:
+          - auth.eehub.mingz.top
   resources:
     requests:
       cpu: 100m

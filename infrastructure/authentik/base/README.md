@@ -14,6 +14,7 @@
 
 - 入口域名：`auth.eehub.mingz.top`
 - Ingress Controller：Traefik
+- Ingress 入口：`web,websecure`
 - 数据库：Chart 内置 PostgreSQL，持久化到 `longhorn-fast-1replica`
 - Secret 管理：Sealed Secrets
 
@@ -39,7 +40,7 @@
 
 4. 首次初始化入口：
 
-   - `http://auth.eehub.mingz.top/if/flow/initial-setup/`
+   - `https://auth.eehub.mingz.top/if/flow/initial-setup/`
    - 末尾 `/` 不能省略。
 
 ## Secret 维护
