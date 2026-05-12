@@ -62,7 +62,7 @@
 - PostgreSQL 首次在空数据目录启动时，会执行 `ConfigMap/ai-postgresql-init` 中的脚本，创建 `metapi` 数据库和对应用户。
 - `metapi` 额外挂载 `/app/data`，用于保留本地运行数据与非数据库文件状态。
 - `aether` 额外使用 initContainer 幂等创建 / 修正 `aether` 数据库与用户，兼容当前已运行的共享 PostgreSQL。
-- `aether` 当前使用上游 `ghcr.io/fawney19/aether:pre`，对应 Rust Pioneer 路线。
+- `aether` 当前固定使用上游 `ghcr.io/fawney19/aether:0.7.0-rc28`，对应 Rust Pioneer 路线的 `v0.7.0-rc28` 预发布版本。
 - `ds2api` 通过 initContainer 首次将 Secret 中的 `config.json` 复制到 PVC，后续运行期 token 刷新写回 `/data/config.json`，避免重启后丢失状态。
 - `kiro-rs` 通过 initContainer 将 `config.json` 与初始 `credentials.json` 复制到可写 PVC，避免 Token 刷新后无法回写。
 - `cli-proxy-api` 通过 initContainer 将 `config.yaml` 复制到 PVC，并初始化持久化 `auths` 目录。
