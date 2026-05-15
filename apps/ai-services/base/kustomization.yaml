@@ -13,4 +13,6 @@ resources:
   - kiro-rs.yaml
   - cli-proxy-api.yaml
   - grok2api.yaml
+  - gpt-load.yaml
+  - codex2api.yaml
   - ingress.yaml

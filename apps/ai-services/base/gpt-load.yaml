@@ -1,0 +1,208 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: gpt-load
+  namespace: ai-services
+  labels:
+    app: gpt-load
+    app.kubernetes.io/name: gpt-load
+    app.kubernetes.io/component: ai-gateway
+    app.kubernetes.io/part-of: eehub-ai-services
+spec:
+  type: ClusterIP
+  selector:
+    app: gpt-load
+  ports:
+    - name: http
+      protocol: TCP
+      port: 3001
+      targetPort: 3001
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: gpt-load-data
+  namespace: ai-services
+  labels:
+    app.kubernetes.io/name: gpt-load
+    app.kubernetes.io/component: ai-gateway
+    app.kubernetes.io/part-of: eehub-ai-services
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: longhorn-hdd-1replica
+  resources:
+    requests:
+      storage: 5Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gpt-load
+  namespace: ai-services
+  labels:
+    app: gpt-load
+    app.kubernetes.io/name: gpt-load
+    app.kubernetes.io/component: ai-gateway
+    app.kubernetes.io/part-of: eehub-ai-services
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gpt-load
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: gpt-load
+        app.kubernetes.io/name: gpt-load
+        app.kubernetes.io/component: ai-gateway
+        app.kubernetes.io/part-of: eehub-ai-services
+    spec:
+      automountServiceAccountToken: false
+      initContainers:
+        - name: init-gpt-load-database
+          image: postgres:16-alpine
+          imagePullPolicy: Always
+          command:
+            - sh
+            - -ec
+            - |
+              until pg_isready -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_USER" -d "$POSTGRES_DB"; do
+                echo "waiting for ai-postgresql..."
+                sleep 2
+              done
+
+              export PGPASSWORD="$POSTGRES_PASSWORD"
+              psql -v ON_ERROR_STOP=1 \
+                -h "$POSTGRES_HOST" \
+                -p "$POSTGRES_PORT" \
+                -U "$POSTGRES_USER" \
+                -d "$POSTGRES_DB" \
+                --set=gpt_load_password="$GPT_LOAD_DB_PASSWORD" <<'SQL'
+              SELECT format('CREATE ROLE gpt_load LOGIN PASSWORD %L', :'gpt_load_password')
+              WHERE NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'gpt_load')
+              \gexec
+
+              SELECT format('ALTER ROLE gpt_load LOGIN PASSWORD %L', :'gpt_load_password')
+              WHERE EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'gpt_load')
+              \gexec
+
+              SELECT 'CREATE DATABASE gpt_load OWNER gpt_load'
+              WHERE NOT EXISTS (SELECT 1 FROM pg_database WHERE datname = 'gpt_load')
+              \gexec
+
+              ALTER DATABASE gpt_load OWNER TO gpt_load;
+              GRANT ALL PRIVILEGES ON DATABASE gpt_load TO gpt_load;
+              SQL
+          env:
+            - name: POSTGRES_HOST
+              value: ai-postgresql.ai-services.svc.cluster.local
+            - name: POSTGRES_PORT
+              value: "5432"
+            - name: POSTGRES_USER
+              value: postgres
+            - name: POSTGRES_DB
+              value: postgres
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: ai-postgresql-secret
+                  key: POSTGRES_PASSWORD
+            - name: GPT_LOAD_DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: gpt-load-secret
+                  key: GPT_LOAD_DB_PASSWORD
+            - name: TZ
+              value: Asia/Shanghai
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 250m
+              memory: 256Mi
+      containers:
+        - name: gpt-load
+          image: ghcr.io/tbphp/gpt-load:v1.4.7
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 3001
+              protocol: TCP
+          env:
+            - name: PORT
+              value: "3001"
+            - name: HOST
+              value: 0.0.0.0
+            - name: TZ
+              value: Asia/Shanghai
+            - name: AUTH_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: gpt-load-secret
+                  key: AUTH_KEY
+            - name: ENCRYPTION_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: gpt-load-secret
+                  key: ENCRYPTION_KEY
+            - name: DATABASE_DSN
+              valueFrom:
+                secretKeyRef:
+                  name: gpt-load-secret
+                  key: DATABASE_DSN
+            - name: REDIS_DSN
+              value: ""
+            - name: LOG_ENABLE_FILE
+              value: "true"
+            - name: LOG_FILE_PATH
+              value: /app/data/logs/app.log
+            - name: HTTP_PROXY
+              value: http://mihomo-proxy-nodeport.default.svc.cluster.local:7897
+            - name: HTTPS_PROXY
+              value: http://mihomo-proxy-nodeport.default.svc.cluster.local:7897
+            - name: ALL_PROXY
+              value: http://mihomo-proxy-nodeport.default.svc.cluster.local:7897
+            - name: NO_PROXY
+              value: 127.0.0.1,localhost,.svc,.cluster.local,ai-postgresql,ai-postgresql.ai-services.svc,ai-postgresql.ai-services.svc.cluster.local,172.24.0.0/16,172.25.0.0/16
+            - name: http_proxy
+              value: http://mihomo-proxy-nodeport.default.svc.cluster.local:7897
+            - name: https_proxy
+              value: http://mihomo-proxy-nodeport.default.svc.cluster.local:7897
+            - name: all_proxy
+              value: http://mihomo-proxy-nodeport.default.svc.cluster.local:7897
+            - name: no_proxy
+              value: 127.0.0.1,localhost,.svc,.cluster.local,ai-postgresql,ai-postgresql.ai-services.svc,ai-postgresql.ai-services.svc.cluster.local,172.24.0.0/16,172.25.0.0/16
+          resources:
+            requests:
+              cpu: 200m
+              memory: 256Mi
+            limits:
+              cpu: "1"
+              memory: 768Mi
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 3001
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 6
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 3001
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+          volumeMounts:
+            - name: data
+              mountPath: /app/data
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: gpt-load-data

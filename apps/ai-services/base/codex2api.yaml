@@ -1,0 +1,226 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: codex2api
+  namespace: ai-services
+  labels:
+    app: codex2api
+    app.kubernetes.io/name: codex2api
+    app.kubernetes.io/component: codex-gateway
+    app.kubernetes.io/part-of: eehub-ai-services
+spec:
+  type: ClusterIP
+  selector:
+    app: codex2api
+  ports:
+    - name: http
+      protocol: TCP
+      port: 8080
+      targetPort: 8080
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: codex2api-data
+  namespace: ai-services
+  labels:
+    app.kubernetes.io/name: codex2api
+    app.kubernetes.io/component: codex-gateway
+    app.kubernetes.io/part-of: eehub-ai-services
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: longhorn-hdd-1replica
+  resources:
+    requests:
+      storage: 5Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: codex2api
+  namespace: ai-services
+  labels:
+    app: codex2api
+    app.kubernetes.io/name: codex2api
+    app.kubernetes.io/component: codex-gateway
+    app.kubernetes.io/part-of: eehub-ai-services
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: codex2api
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: codex2api
+        app.kubernetes.io/name: codex2api
+        app.kubernetes.io/component: codex-gateway
+        app.kubernetes.io/part-of: eehub-ai-services
+    spec:
+      automountServiceAccountToken: false
+      initContainers:
+        - name: init-codex2api-database
+          image: postgres:16-alpine
+          imagePullPolicy: Always
+          command:
+            - sh
+            - -ec
+            - |
+              until pg_isready -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_USER" -d "$POSTGRES_DB"; do
+                echo "waiting for ai-postgresql..."
+                sleep 2
+              done
+
+              export PGPASSWORD="$POSTGRES_PASSWORD"
+              psql -v ON_ERROR_STOP=1 \
+                -h "$POSTGRES_HOST" \
+                -p "$POSTGRES_PORT" \
+                -U "$POSTGRES_USER" \
+                -d "$POSTGRES_DB" \
+                --set=codex2api_password="$CODEX2API_DB_PASSWORD" <<'SQL'
+              SELECT format('CREATE ROLE codex2api LOGIN PASSWORD %L', :'codex2api_password')
+              WHERE NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'codex2api')
+              \gexec
+
+              SELECT format('ALTER ROLE codex2api LOGIN PASSWORD %L', :'codex2api_password')
+              WHERE EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'codex2api')
+              \gexec
+
+              SELECT 'CREATE DATABASE codex2api OWNER codex2api'
+              WHERE NOT EXISTS (SELECT 1 FROM pg_database WHERE datname = 'codex2api')
+              \gexec
+
+              ALTER DATABASE codex2api OWNER TO codex2api;
+              GRANT ALL PRIVILEGES ON DATABASE codex2api TO codex2api;
+              SQL
+          env:
+            - name: POSTGRES_HOST
+              value: ai-postgresql.ai-services.svc.cluster.local
+            - name: POSTGRES_PORT
+              value: "5432"
+            - name: POSTGRES_USER
+              value: postgres
+            - name: POSTGRES_DB
+              value: postgres
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: ai-postgresql-secret
+                  key: POSTGRES_PASSWORD
+            - name: CODEX2API_DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: codex2api-secret
+                  key: CODEX2API_DB_PASSWORD
+            - name: TZ
+              value: Asia/Shanghai
+        - name: prepare-data-dirs
+          image: busybox:1.36
+          imagePullPolicy: Always
+          command:
+            - sh
+            - -ec
+            - |
+              set -eu
+              mkdir -p /data/images /data/logs
+          volumeMounts:
+            - name: data
+              mountPath: /data
+      containers:
+        - name: codex2api
+          image: ghcr.io/james-6-23/codex2api:v2.1.5
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          env:
+            - name: CODEX_PORT
+              value: "8080"
+            - name: CODEX_BIND
+              value: 0.0.0.0
+            - name: GIN_MODE
+              value: release
+            - name: TZ
+              value: Asia/Shanghai
+            - name: ADMIN_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: codex2api-secret
+                  key: ADMIN_SECRET
+            - name: DATABASE_DRIVER
+              value: postgres
+            - name: DATABASE_HOST
+              value: ai-postgresql.ai-services.svc.cluster.local
+            - name: DATABASE_PORT
+              value: "5432"
+            - name: DATABASE_USER
+              value: codex2api
+            - name: DATABASE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: codex2api-secret
+                  key: CODEX2API_DB_PASSWORD
+            - name: DATABASE_NAME
+              value: codex2api
+            - name: DATABASE_SSLMODE
+              value: disable
+            - name: CACHE_DRIVER
+              value: memory
+            - name: CODEX_ALLOW_ANONYMOUS
+              value: "false"
+            - name: IMAGE_ASSET_DIR
+              value: /data/images
+            - name: LOG_DIR
+              value: /data/logs
+            - name: LOG_DISABLED
+              value: "false"
+            - name: HTTP_PROXY
+              value: http://mihomo-proxy-nodeport.default.svc.cluster.local:7897
+            - name: HTTPS_PROXY
+              value: http://mihomo-proxy-nodeport.default.svc.cluster.local:7897
+            - name: ALL_PROXY
+              value: http://mihomo-proxy-nodeport.default.svc.cluster.local:7897
+            - name: NO_PROXY
+              value: 127.0.0.1,localhost,.svc,.cluster.local,ai-postgresql,ai-postgresql.ai-services.svc,ai-postgresql.ai-services.svc.cluster.local,172.24.0.0/16,172.25.0.0/16
+            - name: http_proxy
+              value: http://mihomo-proxy-nodeport.default.svc.cluster.local:7897
+            - name: https_proxy
+              value: http://mihomo-proxy-nodeport.default.svc.cluster.local:7897
+            - name: all_proxy
+              value: http://mihomo-proxy-nodeport.default.svc.cluster.local:7897
+            - name: no_proxy
+              value: 127.0.0.1,localhost,.svc,.cluster.local,ai-postgresql,ai-postgresql.ai-services.svc,ai-postgresql.ai-services.svc.cluster.local,172.24.0.0/16,172.25.0.0/16
+          resources:
+            requests:
+              cpu: 200m
+              memory: 256Mi
+            limits:
+              cpu: "1"
+              memory: 1Gi
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 6
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+          volumeMounts:
+            - name: data
+              mountPath: /data
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: codex2api-data
