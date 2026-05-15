@@ -15,6 +15,7 @@
 - `Deployment/grok2api`：Grok Web 转 OpenAI / Anthropic 兼容 API，默认仅内部访问，走 Mihomo 默认节点。
 - `Deployment/gpt-load`：GPT-Load 多渠道 AI 代理，走 Mihomo 默认节点，使用共享 PostgreSQL 与共享 Redis。
 - `Deployment/codex2api`：Codex2API 管理台与 API 网关，走 Mihomo 默认节点，使用共享 PostgreSQL 与共享 Redis。
+- `Deployment/outlook-email`：Outlook / IMAP 邮箱管理台，默认仅内部访问，走 Mihomo 默认节点，使用本地 SQLite。
 
 ## 敏感信息
 
@@ -36,6 +37,7 @@
 - `ai-services-redis-secret`
 - `gpt-load-secret`
 - `codex2api-secret`
+- `outlook-email-secret`
 
 ## 当前运行口径
 
@@ -56,6 +58,7 @@
   - `grok2api`：默认 Mihomo 节点 `7897`
   - `gpt-load`：默认 Mihomo 节点 `7897`
   - `codex2api`：默认 Mihomo 节点 `7897`
+  - `outlook-email`：默认 Mihomo 节点 `7897`
 - 数据持久化：
   - PostgreSQL：`20Gi`，`longhorn-fast-1replica`
   - Aether Redis 数据 PVC：`2Gi`，`longhorn-hdd-1replica`
@@ -67,6 +70,7 @@
   - Grok2API 数据 PVC：`5Gi`，`longhorn-hdd-1replica`
   - GPT-Load 数据 PVC：`5Gi`，`longhorn-hdd-1replica`
   - Codex2API 数据 PVC：`5Gi`，`longhorn-hdd-1replica`
+  - OutlookEmail 数据 PVC：`5Gi`，`longhorn-hdd-1replica`
 
 ## 初始化说明
 
@@ -81,3 +85,5 @@
 - 如需强制刷新 `grok2api` 的初始配置，需要同时更新 `grok2api-secret` 中的 `bootstrap-version`，这样 Pod 重建后会重新覆盖 PVC 内的 `config.toml`。
 - `gpt-load` 使用 initContainer 幂等创建 `gpt_load` 数据库与用户；当前按 PostgreSQL + Redis 运行，使用 `ai-services-redis` 的 database 0，并显式保留 Mihomo 默认代理，运行日志保存在 `/app/data/logs`。
 - `codex2api` 使用 initContainer 幂等创建 `codex2api` 数据库与用户；当前按 PostgreSQL + Redis 缓存运行，使用 `ai-services-redis` 的 database 1，运行期图片与日志保存在 `/data`。
+- `outlook-email` 当前固定使用 `ghcr.io/assast/outlookemail:v2.0.46`，数据目录为 `/app/data`，SQLite 数据库位于 `/app/data/outlook_accounts.db`，并通过 `SECRET_KEY` 与 `LOGIN_PASSWORD` 控制初始登录与加密状态。
+- `outlook-email` 按上游建议保持单副本 + `Recreate`，不启用 Docker socket 在线更新；由于未确认稳定 HTTP 健康路由，当前使用 `tcpSocket:5000` 探针。
