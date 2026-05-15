@@ -8,12 +8,13 @@
 - `Deployment/metapi`：中转站聚合、自动签到与统一代理入口。
 - `Deployment/aether`：Rust Pioneer 版 AI 网关，当前作为新的统一入口。
 - `Deployment/aether-redis`：Aether 专用 Redis。
+- `Deployment/ai-services-redis`：GPT-Load 与 Codex2API 共用 Redis。
 - `Deployment/ds2api`：DeepSeek Web 转 OpenAI / Claude / Gemini 兼容 API，中间件仅内部访问。
 - `Deployment/kiro-rs`：Kiro 反代，走 Mihomo clean 节点。
 - `Deployment/cli-proxy-api`：Codex / CLIProxyAPI 反代，走 Mihomo 默认节点。
 - `Deployment/grok2api`：Grok Web 转 OpenAI / Anthropic 兼容 API，默认仅内部访问，走 Mihomo 默认节点。
-- `Deployment/gpt-load`：GPT-Load 多渠道 AI 代理，走 Mihomo 默认节点，使用共享 PostgreSQL。
-- `Deployment/codex2api`：Codex2API 管理台与 API 网关，走 Mihomo 默认节点，使用共享 PostgreSQL，当前启用内存缓存。
+- `Deployment/gpt-load`：GPT-Load 多渠道 AI 代理，走 Mihomo 默认节点，使用共享 PostgreSQL 与共享 Redis。
+- `Deployment/codex2api`：Codex2API 管理台与 API 网关，走 Mihomo 默认节点，使用共享 PostgreSQL 与共享 Redis。
 
 ## 敏感信息
 
@@ -32,6 +33,7 @@
 - `kiro-rs-secret`
 - `cli-proxy-api-secret`
 - `grok2api-secret`
+- `ai-services-redis-secret`
 - `gpt-load-secret`
 - `codex2api-secret`
 
@@ -57,6 +59,7 @@
 - 数据持久化：
   - PostgreSQL：`20Gi`，`longhorn-fast-1replica`
   - Aether Redis 数据 PVC：`2Gi`，`longhorn-hdd-1replica`
+  - AI Services Redis 数据 PVC：`2Gi`，`longhorn-hdd-1replica`
   - DS2API 数据 PVC：`2Gi`，`longhorn-hdd-1replica`
   - Metapi 数据 PVC：`2Gi`，`longhorn-hdd-1replica`
   - Kiro 配置 PVC：`1Gi`，`longhorn-hdd-1replica`
@@ -76,5 +79,5 @@
 - `cli-proxy-api` 通过 initContainer 将 `config.yaml` 复制到 PVC，并初始化持久化 `auths` 目录。
 - `grok2api` 通过 initContainer 首次将 Secret 中的 `config.toml` 复制到 PVC；后续运行时配置、SQLite 账号库与日志都保存在同一个持久化卷中。
 - 如需强制刷新 `grok2api` 的初始配置，需要同时更新 `grok2api-secret` 中的 `bootstrap-version`，这样 Pod 重建后会重新覆盖 PVC 内的 `config.toml`。
-- `gpt-load` 使用 initContainer 幂等创建 `gpt_load` 数据库与用户；运行日志保存在 `/app/data/logs`。
-- `codex2api` 使用 initContainer 幂等创建 `codex2api` 数据库与用户；当前按 PostgreSQL + 内存缓存运行，不额外引入 Redis，运行期图片与日志保存在 `/data`。
+- `gpt-load` 使用 initContainer 幂等创建 `gpt_load` 数据库与用户；当前按 PostgreSQL + Redis 运行，使用 `ai-services-redis` 的 database 0，并显式保留 Mihomo 默认代理，运行日志保存在 `/app/data/logs`。
+- `codex2api` 使用 initContainer 幂等创建 `codex2api` 数据库与用户；当前按 PostgreSQL + Redis 缓存运行，使用 `ai-services-redis` 的 database 1，运行期图片与日志保存在 `/data`。
