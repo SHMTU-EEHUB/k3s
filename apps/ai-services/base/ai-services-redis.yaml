@@ -1,0 +1,122 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: ai-services-redis
+  namespace: ai-services
+  labels:
+    app: ai-services-redis
+    app.kubernetes.io/name: ai-services-redis
+    app.kubernetes.io/component: cache
+    app.kubernetes.io/part-of: eehub-ai-services
+spec:
+  type: ClusterIP
+  selector:
+    app: ai-services-redis
+  ports:
+    - name: redis
+      protocol: TCP
+      port: 6379
+      targetPort: 6379
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: ai-services-redis-data
+  namespace: ai-services
+  labels:
+    app.kubernetes.io/name: ai-services-redis
+    app.kubernetes.io/component: cache
+    app.kubernetes.io/part-of: eehub-ai-services
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: longhorn-hdd-1replica
+  resources:
+    requests:
+      storage: 2Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ai-services-redis
+  namespace: ai-services
+  labels:
+    app: ai-services-redis
+    app.kubernetes.io/name: ai-services-redis
+    app.kubernetes.io/component: cache
+    app.kubernetes.io/part-of: eehub-ai-services
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ai-services-redis
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: ai-services-redis
+        app.kubernetes.io/name: ai-services-redis
+        app.kubernetes.io/component: cache
+        app.kubernetes.io/part-of: eehub-ai-services
+    spec:
+      automountServiceAccountToken: false
+      containers:
+        - name: redis
+          image: redis:7-alpine
+          imagePullPolicy: Always
+          command:
+            - sh
+            - -ec
+            - |
+              exec redis-server \
+                --appendonly yes \
+                --appendfsync everysec \
+                --save 60 1000 \
+                --requirepass "$REDIS_PASSWORD"
+          ports:
+            - name: redis
+              containerPort: 6379
+              protocol: TCP
+          env:
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: ai-services-redis-secret
+                  key: REDIS_PASSWORD
+            - name: TZ
+              value: Asia/Shanghai
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 250m
+              memory: 256Mi
+          readinessProbe:
+            exec:
+              command:
+                - sh
+                - -ec
+                - redis-cli -a "$REDIS_PASSWORD" ping | grep -q PONG
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 6
+          livenessProbe:
+            exec:
+              command:
+                - sh
+                - -ec
+                - redis-cli -a "$REDIS_PASSWORD" ping | grep -q PONG
+            initialDelaySeconds: 30
+            periodSeconds: 20
+            timeoutSeconds: 5
+            failureThreshold: 6
+          volumeMounts:
+            - name: data
+              mountPath: /data
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: ai-services-redis-data

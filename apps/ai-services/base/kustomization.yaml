@@ -8,6 +8,7 @@ resources:
   - postgresql.yaml
   - metapi.yaml
   - aether-redis.yaml
+  - ai-services-redis.yaml
   - aether.yaml
   - ds2api.yaml
   - kiro-rs.yaml
