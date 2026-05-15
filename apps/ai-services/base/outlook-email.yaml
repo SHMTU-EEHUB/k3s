@@ -1,0 +1,136 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: outlook-email
+  namespace: ai-services
+  labels:
+    app: outlook-email
+    app.kubernetes.io/name: outlook-email
+    app.kubernetes.io/component: mail-management
+    app.kubernetes.io/part-of: eehub-ai-services
+spec:
+  type: ClusterIP
+  selector:
+    app: outlook-email
+  ports:
+    - name: http
+      protocol: TCP
+      port: 5000
+      targetPort: 5000
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: outlook-email-data
+  namespace: ai-services
+  labels:
+    app.kubernetes.io/name: outlook-email
+    app.kubernetes.io/component: mail-management
+    app.kubernetes.io/part-of: eehub-ai-services
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: longhorn-hdd-1replica
+  resources:
+    requests:
+      storage: 5Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: outlook-email
+  namespace: ai-services
+  labels:
+    app: outlook-email
+    app.kubernetes.io/name: outlook-email
+    app.kubernetes.io/component: mail-management
+    app.kubernetes.io/part-of: eehub-ai-services
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: outlook-email
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: outlook-email
+        app.kubernetes.io/name: outlook-email
+        app.kubernetes.io/component: mail-management
+        app.kubernetes.io/part-of: eehub-ai-services
+    spec:
+      automountServiceAccountToken: false
+      containers:
+        - name: outlook-email
+          image: ghcr.io/assast/outlookemail:v2.0.46
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 5000
+              protocol: TCP
+          env:
+            - name: TZ
+              value: Asia/Shanghai
+            - name: FLASK_ENV
+              value: production
+            - name: HOST
+              value: 0.0.0.0
+            - name: PORT
+              value: "5000"
+            - name: DATABASE_PATH
+              value: data/outlook_accounts.db
+            - name: SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: outlook-email-secret
+                  key: SECRET_KEY
+            - name: LOGIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: outlook-email-secret
+                  key: LOGIN_PASSWORD
+            - name: HTTP_PROXY
+              value: http://mihomo-proxy-nodeport.default.svc.cluster.local:7897
+            - name: HTTPS_PROXY
+              value: http://mihomo-proxy-nodeport.default.svc.cluster.local:7897
+            - name: ALL_PROXY
+              value: http://mihomo-proxy-nodeport.default.svc.cluster.local:7897
+            - name: NO_PROXY
+              value: 127.0.0.1,localhost,.svc,.cluster.local,172.24.0.0/16,172.25.0.0/16
+            - name: http_proxy
+              value: http://mihomo-proxy-nodeport.default.svc.cluster.local:7897
+            - name: https_proxy
+              value: http://mihomo-proxy-nodeport.default.svc.cluster.local:7897
+            - name: all_proxy
+              value: http://mihomo-proxy-nodeport.default.svc.cluster.local:7897
+            - name: no_proxy
+              value: 127.0.0.1,localhost,.svc,.cluster.local,172.24.0.0/16,172.25.0.0/16
+          resources:
+            requests:
+              cpu: 200m
+              memory: 512Mi
+            limits:
+              cpu: "1"
+              memory: 2Gi
+          readinessProbe:
+            tcpSocket:
+              port: 5000
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 6
+          livenessProbe:
+            tcpSocket:
+              port: 5000
+            initialDelaySeconds: 60
+            periodSeconds: 20
+            timeoutSeconds: 5
+            failureThreshold: 6
+          volumeMounts:
+            - name: data
+              mountPath: /app/data
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: outlook-email-data
