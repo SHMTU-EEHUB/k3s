@@ -12,6 +12,8 @@
 - `Deployment/kiro-rs`：Kiro 反代，走 Mihomo clean 节点。
 - `Deployment/cli-proxy-api`：Codex / CLIProxyAPI 反代，走 Mihomo 默认节点。
 - `Deployment/grok2api`：Grok Web 转 OpenAI / Anthropic 兼容 API，默认仅内部访问，走 Mihomo 默认节点。
+- `Deployment/gpt-load`：GPT-Load 多渠道 AI 代理，走 Mihomo 默认节点，使用共享 PostgreSQL。
+- `Deployment/codex2api`：Codex2API 管理台与 API 网关，走 Mihomo 默认节点，使用共享 PostgreSQL，当前启用内存缓存。
 
 ## 敏感信息
 
@@ -30,6 +32,8 @@
 - `kiro-rs-secret`
 - `cli-proxy-api-secret`
 - `grok2api-secret`
+- `gpt-load-secret`
+- `codex2api-secret`
 
 ## 当前运行口径
 
@@ -48,6 +52,8 @@
   - `kiro-rs`：clean Mihomo 节点 `7896`
   - `cli-proxy-api`：默认 Mihomo 节点 `7897`
   - `grok2api`：默认 Mihomo 节点 `7897`
+  - `gpt-load`：默认 Mihomo 节点 `7897`
+  - `codex2api`：默认 Mihomo 节点 `7897`
 - 数据持久化：
   - PostgreSQL：`20Gi`，`longhorn-fast-1replica`
   - Aether Redis 数据 PVC：`2Gi`，`longhorn-hdd-1replica`
@@ -56,6 +62,8 @@
   - Kiro 配置 PVC：`1Gi`，`longhorn-hdd-1replica`
   - CPA 数据 PVC：`2Gi`，`longhorn-hdd-1replica`
   - Grok2API 数据 PVC：`5Gi`，`longhorn-hdd-1replica`
+  - GPT-Load 数据 PVC：`5Gi`，`longhorn-hdd-1replica`
+  - Codex2API 数据 PVC：`5Gi`，`longhorn-hdd-1replica`
 
 ## 初始化说明
 
@@ -68,3 +76,5 @@
 - `cli-proxy-api` 通过 initContainer 将 `config.yaml` 复制到 PVC，并初始化持久化 `auths` 目录。
 - `grok2api` 通过 initContainer 首次将 Secret 中的 `config.toml` 复制到 PVC；后续运行时配置、SQLite 账号库与日志都保存在同一个持久化卷中。
 - 如需强制刷新 `grok2api` 的初始配置，需要同时更新 `grok2api-secret` 中的 `bootstrap-version`，这样 Pod 重建后会重新覆盖 PVC 内的 `config.toml`。
+- `gpt-load` 使用 initContainer 幂等创建 `gpt_load` 数据库与用户；运行日志保存在 `/app/data/logs`。
+- `codex2api` 使用 initContainer 幂等创建 `codex2api` 数据库与用户；当前按 PostgreSQL + 内存缓存运行，不额外引入 Redis，运行期图片与日志保存在 `/data`。
