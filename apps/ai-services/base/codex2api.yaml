@@ -169,7 +169,16 @@ spec:
             - name: DATABASE_SSLMODE
               value: disable
             - name: CACHE_DRIVER
-              value: memory
+              value: redis
+            - name: REDIS_ADDR
+              value: ai-services-redis.ai-services.svc.cluster.local:6379
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: codex2api-secret
+                  key: REDIS_PASSWORD
+            - name: REDIS_DB
+              value: "1"
             - name: CODEX_ALLOW_ANONYMOUS
               value: "false"
             - name: IMAGE_ASSET_DIR
@@ -185,7 +194,7 @@ spec:
             - name: ALL_PROXY
               value: http://mihomo-proxy-nodeport.default.svc.cluster.local:7897
             - name: NO_PROXY
-              value: 127.0.0.1,localhost,.svc,.cluster.local,ai-postgresql,ai-postgresql.ai-services.svc,ai-postgresql.ai-services.svc.cluster.local,172.24.0.0/16,172.25.0.0/16
+              value: 127.0.0.1,localhost,.svc,.cluster.local,ai-postgresql,ai-postgresql.ai-services.svc,ai-postgresql.ai-services.svc.cluster.local,ai-services-redis,ai-services-redis.ai-services.svc,ai-services-redis.ai-services.svc.cluster.local,172.24.0.0/16,172.25.0.0/16
             - name: http_proxy
               value: http://mihomo-proxy-nodeport.default.svc.cluster.local:7897
             - name: https_proxy
@@ -193,7 +202,7 @@ spec:
             - name: all_proxy
               value: http://mihomo-proxy-nodeport.default.svc.cluster.local:7897
             - name: no_proxy
-              value: 127.0.0.1,localhost,.svc,.cluster.local,ai-postgresql,ai-postgresql.ai-services.svc,ai-postgresql.ai-services.svc.cluster.local,172.24.0.0/16,172.25.0.0/16
+              value: 127.0.0.1,localhost,.svc,.cluster.local,ai-postgresql,ai-postgresql.ai-services.svc,ai-postgresql.ai-services.svc.cluster.local,ai-services-redis,ai-services-redis.ai-services.svc,ai-services-redis.ai-services.svc.cluster.local,172.24.0.0/16,172.25.0.0/16
           resources:
             requests:
               cpu: 200m
