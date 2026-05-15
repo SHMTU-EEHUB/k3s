@@ -10,7 +10,6 @@ resources:
   - aether-redis.yaml
   - ai-services-redis.yaml
   - aether.yaml
-  - ds2api.yaml
   - kiro-rs.yaml
   - cli-proxy-api.yaml
   - grok2api.yaml
