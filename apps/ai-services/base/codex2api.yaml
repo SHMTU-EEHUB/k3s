@@ -131,7 +131,7 @@ spec:
               mountPath: /data
       containers:
         - name: codex2api
-          image: ghcr.io/james-6-23/codex2api:v2.1.5
+          image: ghcr.io/james-6-23/codex2api:2.1.5
           imagePullPolicy: Always
           ports:
             - name: http
