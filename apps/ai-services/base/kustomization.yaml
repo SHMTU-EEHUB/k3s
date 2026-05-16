@@ -15,6 +15,5 @@ resources:
   - grok2api.yaml
   - gpt-load.yaml
   - codex2api.yaml
-  - new-api.yaml
   - outlook-email.yaml
   - ingress.yaml
