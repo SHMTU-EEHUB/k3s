@@ -1,0 +1,86 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: scheduler
+  namespace: buildbarn
+  labels:
+    app.kubernetes.io/name: buildbarn-scheduler
+    app.kubernetes.io/component: scheduler
+    app.kubernetes.io/part-of: eehub-infra
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: scheduler
+  template:
+    metadata:
+      labels:
+        app: scheduler
+        app.kubernetes.io/name: buildbarn-scheduler
+        app.kubernetes.io/component: scheduler
+        app.kubernetes.io/part-of: eehub-infra
+    spec:
+      automountServiceAccountToken: false
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: node-role.kubernetes.io/control-plane
+                    operator: Exists
+      containers:
+        - name: scheduler
+          image: ghcr.io/buildbarn/bb-scheduler:20260326T163248Z-e6ab874
+          args:
+            - /config/scheduler.jsonnet
+          ports:
+            - containerPort: 8982
+              protocol: TCP
+            - containerPort: 8983
+              protocol: TCP
+            - containerPort: 7982
+              protocol: TCP
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: "1"
+              memory: 1Gi
+          volumeMounts:
+            - mountPath: /config/
+              name: configs
+              readOnly: true
+      volumes:
+        - name: configs
+          configMap:
+            name: buildbarn-config
+            items:
+              - key: common.libsonnet
+                path: common.libsonnet
+              - key: scheduler.jsonnet
+                path: scheduler.jsonnet
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: scheduler
+  namespace: buildbarn
+  labels:
+    app.kubernetes.io/name: buildbarn-scheduler
+    app.kubernetes.io/component: scheduler
+    app.kubernetes.io/part-of: eehub-infra
+spec:
+  type: ClusterIP
+  ports:
+    - name: client-grpc
+      port: 8982
+      protocol: TCP
+    - name: worker-grpc
+      port: 8983
+      protocol: TCP
+    - name: http
+      port: 7982
+      protocol: TCP
+  selector:
+    app: scheduler
