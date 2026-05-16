@@ -13,7 +13,7 @@ data:
     #!/bin/sh
     set -eu
 
-    mkdir -p /work /var/cache/sccache-toolchains /var/cache/sccache-build
+    mkdir -p /work /var/cache/sccache-toolchains /var/cache/sccache-build/build
     SERVER_ADDR="${NODE_IP}:${SCCACHE_BUILD_SERVER_PORT}"
     SERVER_TOKEN="$(sccache-dist auth generate-jwt-hs256-server-token --secret-key "${SCCACHE_SCHEDULER_SECRET_KEY}" --server "${SERVER_ADDR}")"
 
@@ -24,7 +24,7 @@ data:
 
     [builder]
     type = "overlay"
-    build_dir = "/var/cache/sccache-build"
+    build_dir = "/var/cache/sccache-build/build"
     bwrap_path = "/usr/bin/bwrap"
 
     [scheduler_auth]
