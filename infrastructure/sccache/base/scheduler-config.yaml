@@ -1,0 +1,34 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: sccache-scheduler-config
+  namespace: sccache
+  labels:
+    app: sccache-scheduler
+    app.kubernetes.io/name: sccache-scheduler
+    app.kubernetes.io/component: scheduler-config
+    app.kubernetes.io/part-of: eehub-infra
+data:
+  start-scheduler.sh: |
+    #!/bin/sh
+    set -eu
+
+    if [ "${SCCACHE_SCHEDULER_PUBLIC_ADDR}" = "replace-me-before-enabling:10600" ]; then
+      echo "SCCACHE_SCHEDULER_PUBLIC_ADDR must be replaced before enabling the scheduler" >&2
+      exit 1
+    fi
+
+    mkdir -p /work
+    cat > /work/scheduler.toml <<EOF
+    public_addr = "${SCCACHE_SCHEDULER_PUBLIC_ADDR}"
+
+    [client_auth]
+    type = "token"
+    token = "${SCCACHE_CLIENT_TOKEN}"
+
+    [server_auth]
+    type = "jwt_hs256"
+    secret_key = "${SCCACHE_SCHEDULER_SECRET_KEY}"
+    EOF
+
+    exec sccache-dist scheduler --config /work/scheduler.toml
