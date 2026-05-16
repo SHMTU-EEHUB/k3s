@@ -58,6 +58,8 @@ spec:
           env:
             - name: SCCACHE_SCHEDULER_PUBLIC_ADDR
               value: 0.0.0.0:10600
+            - name: SCCACHE_NO_DAEMON
+              value: "1"
             - name: SCCACHE_CLIENT_TOKEN
               valueFrom:
                 secretKeyRef:
