@@ -286,6 +286,9 @@ data:
             pod: std.extVar('POD_NAME'),
             node: std.extVar('NODE_NAME'),
           },
+          environment_variables: {
+            PATH: '/usr/local/cargo/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin',
+          },
         }],
       }],
       inputDownloadConcurrency: 8,
