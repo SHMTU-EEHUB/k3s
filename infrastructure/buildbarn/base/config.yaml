@@ -285,6 +285,9 @@ data:
           },
           environment_variables: {
             PATH: '/usr/local/cargo/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin',
+            HOME: '/tmp',
+            RUSTUP_HOME: '/usr/local/rustup',
+            CARGO_HOME: '/usr/local/cargo',
           },
         }],
       }],
