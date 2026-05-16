@@ -15,7 +15,6 @@
 - `Deployment/gpt-load`：GPT-Load 多渠道 AI 代理，走 Mihomo 默认节点，使用共享 PostgreSQL 与共享 Redis。
 - `Deployment/codex2api`：Codex2API 管理台与 API 网关，走 Mihomo 默认节点，使用共享 PostgreSQL 与共享 Redis。
 - `Deployment/outlook-email`：Outlook / IMAP 邮箱管理台，默认仅内部访问，走 Mihomo 默认节点，使用本地 SQLite。
-- `Deployment/new-api`：New API 聚合网关，走 Mihomo 默认节点，当前使用共享 PostgreSQL 与共享 Redis，并通过 `newai.eehub.mingz.top` 对外暴露。
 
 ## 敏感信息
 
@@ -44,11 +43,9 @@
 - 暴露方式：
   - `Service/aether` 使用 NodePort `30884`，可在可信 LAN / Tailscale 内通过 `100.100.1.2:30884` 访问。
   - Traefik Ingress 仍提供域名入口：`ai.eehub.mingz.top` → `Service/aether:8084`，`metaapi.eehub.mingz.top` → `Service/metapi:4000`。
-  - `newai.eehub.mingz.top` → `Service/new-api:3000`，默认同时保留 HTTP / HTTPS。
   - `ai.eehub.mingz.top` 默认同时保留 HTTP / HTTPS；`metaapi.eehub.mingz.top` 暂时保持 HTTP。
   - `metapi`：除 Ingress 外不暴露 NodePort，`Service/metapi:4000` 保持 ClusterIP。
-- `grok2api`：仅内部访问，`Service/grok2api:8000`。
-- `new-api`：通过 Ingress 暴露，`Service/new-api:3000` 保持 ClusterIP。
+  - `grok2api`：仅内部访问，`Service/grok2api:8000`。
 - 出站代理：
   - `aether`：默认 Mihomo 节点 `7897`
   - `metapi`：默认 Mihomo 节点 `7897`
@@ -58,7 +55,6 @@
   - `gpt-load`：默认 Mihomo 节点 `7897`
   - `codex2api`：默认 Mihomo 节点 `7897`
   - `outlook-email`：默认 Mihomo 节点 `7897`
-  - `new-api`：默认 Mihomo 节点 `7897`
 - 数据持久化：
   - PostgreSQL：`20Gi`，`longhorn-fast-1replica`
   - Aether Redis 数据 PVC：`2Gi`，`longhorn-hdd-1replica`
@@ -70,7 +66,6 @@
   - GPT-Load 数据 PVC：`5Gi`，`longhorn-hdd-1replica`
   - Codex2API 数据 PVC：`5Gi`，`longhorn-hdd-1replica`
   - OutlookEmail 数据 PVC：`5Gi`，`longhorn-hdd-1replica`
-  - New API 数据 PVC：`5Gi`，`longhorn-hdd-1replica`
 
 ## 初始化说明
 
@@ -86,5 +81,3 @@
 - `codex2api` 使用 initContainer 幂等创建 `codex2api` 数据库与用户；当前按 PostgreSQL + Redis 缓存运行，使用 `ai-services-redis` 的 database 1，运行期图片与日志保存在 `/data`。
 - `outlook-email` 当前固定使用 `ghcr.io/assast/outlookemail:v2.0.46`，数据目录为 `/app/data`，SQLite 数据库位于 `/app/data/outlook_accounts.db`，并通过 `SECRET_KEY` 与 `LOGIN_PASSWORD` 控制初始登录与加密状态。
 - `outlook-email` 按上游建议保持单副本 + `Recreate`，不启用 Docker socket 在线更新；由于未确认稳定 HTTP 健康路由，当前使用 `tcpSocket:5000` 探针。
-- `new-api` 当前固定使用 `calciumion/new-api:latest`，以单副本 + `Recreate` 方式运行，日志目录为 `/app/logs`，并保留 `/data` PVC 以承载运行期文件。
-- `new-api` 使用 initContainer 幂等创建 `new_api` 数据库与用户；当前按 PostgreSQL + Redis 运行，使用 `ai-services-redis` 的 database 2，并使用上游文档中的 `/api/status` 作为健康检查。
