@@ -48,7 +48,7 @@ data:
         },
       },
       browserUrl: 'http://buildbarn-browser.buildbarn.svc.cluster.local:7984',
-      maximumMessageSizeBytes: 2 * 1024 * 1024,
+      maximumMessageSizeBytes: 8 * 1024 * 1024,
       global: {
         diagnosticsHttpServer: {
           httpServers: [{
