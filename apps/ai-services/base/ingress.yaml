@@ -50,3 +50,32 @@ spec:
                 name: metapi
                 port:
                   number: 4000
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: new-api-web
+  namespace: ai-services
+  labels:
+    app.kubernetes.io/name: new-api-web
+    app.kubernetes.io/part-of: eehub-ai-services
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    traefik.ingress.kubernetes.io/router.entrypoints: web,websecure
+spec:
+  ingressClassName: traefik
+  tls:
+    - secretName: newai-eehub-mingz-top-tls
+      hosts:
+        - newai.eehub.mingz.top
+  rules:
+    - host: newai.eehub.mingz.top
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: new-api
+                port:
+                  number: 3000

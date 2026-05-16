@@ -1,0 +1,260 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: new-api
+  namespace: ai-services
+  labels:
+    app: new-api
+    app.kubernetes.io/name: new-api
+    app.kubernetes.io/component: ai-gateway
+    app.kubernetes.io/part-of: eehub-ai-services
+spec:
+  type: ClusterIP
+  selector:
+    app: new-api
+  ports:
+    - name: http
+      protocol: TCP
+      port: 3000
+      targetPort: http
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: new-api-data
+  namespace: ai-services
+  labels:
+    app.kubernetes.io/name: new-api
+    app.kubernetes.io/component: ai-gateway
+    app.kubernetes.io/part-of: eehub-ai-services
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: longhorn-hdd-1replica
+  resources:
+    requests:
+      storage: 5Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: new-api
+  namespace: ai-services
+  labels:
+    app: new-api
+    app.kubernetes.io/name: new-api
+    app.kubernetes.io/component: ai-gateway
+    app.kubernetes.io/part-of: eehub-ai-services
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: new-api
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: new-api
+        app.kubernetes.io/name: new-api
+        app.kubernetes.io/component: ai-gateway
+        app.kubernetes.io/part-of: eehub-ai-services
+    spec:
+      automountServiceAccountToken: false
+      initContainers:
+        - name: init-new-api-database
+          image: postgres:16-alpine
+          imagePullPolicy: Always
+          command:
+            - sh
+            - -ec
+            - |
+              APP_DB_PASSWORD="$(printf '%s' "${REDIS_PASSWORD}:new-api-db" | sha256sum | awk '{print $1}')"
+
+              until pg_isready -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_ADMIN_USER" -d "$POSTGRES_ADMIN_DB"; do
+                echo "waiting for ai-postgresql..."
+                sleep 2
+              done
+
+              export PGPASSWORD="$POSTGRES_ADMIN_PASSWORD"
+              psql -v ON_ERROR_STOP=1 \
+                -h "$POSTGRES_HOST" \
+                -p "$POSTGRES_PORT" \
+                -U "$POSTGRES_ADMIN_USER" \
+                -d "$POSTGRES_ADMIN_DB" \
+                --set=new_api_password="$APP_DB_PASSWORD" <<'SQL'
+              SELECT format('CREATE ROLE new_api LOGIN PASSWORD %L', :'new_api_password')
+              WHERE NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'new_api')
+              \gexec
+
+              SELECT format('ALTER ROLE new_api LOGIN PASSWORD %L', :'new_api_password')
+              WHERE EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'new_api')
+              \gexec
+
+              SELECT 'CREATE DATABASE new_api OWNER new_api'
+              WHERE NOT EXISTS (SELECT 1 FROM pg_database WHERE datname = 'new_api')
+              \gexec
+
+              ALTER DATABASE new_api OWNER TO new_api;
+              GRANT ALL PRIVILEGES ON DATABASE new_api TO new_api;
+              SQL
+          env:
+            - name: POSTGRES_HOST
+              value: ai-postgresql.ai-services.svc.cluster.local
+            - name: POSTGRES_PORT
+              value: "5432"
+            - name: POSTGRES_ADMIN_USER
+              value: postgres
+            - name: POSTGRES_ADMIN_DB
+              value: postgres
+            - name: POSTGRES_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: ai-postgresql-secret
+                  key: POSTGRES_PASSWORD
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: ai-services-redis-secret
+                  key: REDIS_PASSWORD
+            - name: TZ
+              value: Asia/Shanghai
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 250m
+              memory: 256Mi
+      containers:
+        - name: new-api
+          image: calciumion/new-api:latest
+          imagePullPolicy: Always
+          command:
+            - /bin/sh
+          args:
+            - -ec
+            - |
+              urlencode() {
+                input=$1
+                output=""
+
+                while [ -n "$input" ]; do
+                  current_char=${input%"${input#?}"}
+                  input=${input#?}
+
+                  case "$current_char" in
+                    [a-zA-Z0-9.~_-])
+                      output="${output}${current_char}"
+                      ;;
+                    *)
+                      current_hex=$(printf '%s' "$current_char" | od -An -tx1 | tr -d ' \n' | tr '[:lower:]' '[:upper:]')
+                      output="${output}%${current_hex}"
+                      ;;
+                  esac
+                done
+
+                printf '%s' "$output"
+              }
+
+              APP_DB_PASSWORD="$(printf '%s' "${REDIS_PASSWORD}:new-api-db" | sha256sum | awk '{print $1}')"
+              ENCODED_REDIS_PASSWORD="$(urlencode "$REDIS_PASSWORD")"
+
+              export SQL_DSN="postgresql://${POSTGRES_USER}:${APP_DB_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}?sslmode=disable"
+              export REDIS_CONN_STRING="redis://:${ENCODED_REDIS_PASSWORD}@${REDIS_HOST}:${REDIS_PORT}/${REDIS_DB}"
+
+              exec /new-api --log-dir /app/logs
+          ports:
+            - name: http
+              containerPort: 3000
+              protocol: TCP
+          env:
+            - name: PORT
+              value: "3000"
+            - name: TZ
+              value: Asia/Shanghai
+            - name: POSTGRES_HOST
+              value: ai-postgresql.ai-services.svc.cluster.local
+            - name: POSTGRES_PORT
+              value: "5432"
+            - name: POSTGRES_DB
+              value: new_api
+            - name: POSTGRES_USER
+              value: new_api
+            - name: REDIS_HOST
+              value: ai-services-redis.ai-services.svc.cluster.local
+            - name: REDIS_PORT
+              value: "6379"
+            - name: REDIS_DB
+              value: "2"
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: ai-services-redis-secret
+                  key: REDIS_PASSWORD
+            - name: CRYPTO_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: ai-services-redis-secret
+                  key: REDIS_PASSWORD
+            - name: SESSION_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: ai-services-redis-secret
+                  key: REDIS_PASSWORD
+            - name: ERROR_LOG_ENABLED
+              value: "true"
+            - name: BATCH_UPDATE_ENABLED
+              value: "true"
+            - name: NODE_NAME
+              value: new-api-node-1
+            - name: HTTP_PROXY
+              value: http://mihomo-proxy-nodeport.default.svc.cluster.local:7897
+            - name: HTTPS_PROXY
+              value: http://mihomo-proxy-nodeport.default.svc.cluster.local:7897
+            - name: ALL_PROXY
+              value: http://mihomo-proxy-nodeport.default.svc.cluster.local:7897
+            - name: NO_PROXY
+              value: 127.0.0.1,localhost,.svc,.cluster.local,ai-postgresql,ai-postgresql.ai-services.svc,ai-postgresql.ai-services.svc.cluster.local,ai-services-redis,ai-services-redis.ai-services.svc,ai-services-redis.ai-services.svc.cluster.local,172.24.0.0/16,172.25.0.0/16
+            - name: http_proxy
+              value: http://mihomo-proxy-nodeport.default.svc.cluster.local:7897
+            - name: https_proxy
+              value: http://mihomo-proxy-nodeport.default.svc.cluster.local:7897
+            - name: all_proxy
+              value: http://mihomo-proxy-nodeport.default.svc.cluster.local:7897
+            - name: no_proxy
+              value: 127.0.0.1,localhost,.svc,.cluster.local,ai-postgresql,ai-postgresql.ai-services.svc,ai-postgresql.ai-services.svc.cluster.local,ai-services-redis,ai-services-redis.ai-services.svc,ai-services-redis.ai-services.svc.cluster.local,172.24.0.0/16,172.25.0.0/16
+          resources:
+            requests:
+              cpu: 200m
+              memory: 256Mi
+            limits:
+              cpu: "1"
+              memory: 1Gi
+          readinessProbe:
+            httpGet:
+              path: /api/status
+              port: http
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 6
+          livenessProbe:
+            httpGet:
+              path: /api/status
+              port: http
+            initialDelaySeconds: 60
+            periodSeconds: 20
+            timeoutSeconds: 5
+            failureThreshold: 6
+          volumeMounts:
+            - name: data
+              mountPath: /data
+            - name: logs
+              mountPath: /app/logs
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: new-api-data
+        - name: logs
+          emptyDir: {}
