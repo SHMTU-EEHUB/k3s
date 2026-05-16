@@ -276,12 +276,9 @@ data:
         runners: [{
           endpoint: { address: 'unix:///worker/runner' },
           concurrency: 4,
-          platform: {
-            properties: [
-              { name: 'OSFamily', value: 'linux' },
-              { name: 'container-image', value: 'docker://docker.io/library/rust:1.94' },
-            ],
-          },
+              platform: {
+                properties: [],
+              },
           workerId: {
             pod: std.extVar('POD_NAME'),
             node: std.extVar('NODE_NAME'),
