@@ -18,9 +18,10 @@ data:
     SERVER_TOKEN="$(sccache-dist auth generate-jwt-hs256-server-token --secret-key "${SCCACHE_SCHEDULER_SECRET_KEY}" --server "${SERVER_ADDR}")"
 
     cat > /work/server.toml <<EOF
-    cache_dir = "/var/cache/sccache-toolchains"
-    public_addr = "${SERVER_ADDR}"
-    scheduler_url = "${SCCACHE_SCHEDULER_URL}"
+            cache_dir = "/var/cache/sccache-toolchains"
+            public_addr = "${SERVER_ADDR}"
+            bind_address = "0.0.0.0:${SCCACHE_BUILD_SERVER_PORT}"
+            scheduler_url = "${SCCACHE_SCHEDULER_URL}"
 
     [builder]
     type = "overlay"

@@ -13,7 +13,8 @@ data:
     [cache.s3]
     bucket = "sccache"
     endpoint = "http://minio.minio.svc.cluster.local:9000"
-    region = "us-east-1"
+          region = "us-east-1"
+          no_credentials = false
 
     [dist]
     scheduler_url = "https://sccache.eehub.mingz.top"
