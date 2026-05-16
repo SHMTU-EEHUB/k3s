@@ -129,4 +129,4 @@ spec:
         storageClassName: longhorn-hdd-1replica
         resources:
           requests:
-            storage: 1Ti
+            storage: 500Gi
