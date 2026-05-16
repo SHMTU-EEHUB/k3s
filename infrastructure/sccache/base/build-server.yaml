@@ -66,7 +66,7 @@ spec:
             - name: SCCACHE_BUILD_SERVER_PORT
               value: "10501"
             - name: SCCACHE_SCHEDULER_URL
-              value: http://sccache-scheduler.sccache.svc.cluster.local:10600
+              value: https://sccache.eehub.mingz.top
             - name: SCCACHE_SCHEDULER_SECRET_KEY
               valueFrom:
                 secretKeyRef:
