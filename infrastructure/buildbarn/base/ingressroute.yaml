@@ -1,0 +1,21 @@
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: frontend-grpc
+  namespace: buildbarn
+  labels:
+    app.kubernetes.io/name: buildbarn-frontend
+    app.kubernetes.io/component: ingress
+    app.kubernetes.io/part-of: eehub-infra
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(`build.eehub.mingz.top`)
+      kind: Rule
+      services:
+        - name: frontend
+          port: 8980
+          scheme: h2c
+  tls:
+    secretName: build-eehub-mingz-top-tls
