@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: sccache
+  labels:
+    app.kubernetes.io/name: sccache
+    app.kubernetes.io/part-of: eehub-infra

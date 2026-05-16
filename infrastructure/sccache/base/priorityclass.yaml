@@ -1,0 +1,8 @@
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: sccache-opportunistic-build
+value: -10
+globalDefault: false
+description: Opportunistic distributed build workers that should yield to regular workloads.
+preemptionPolicy: Never

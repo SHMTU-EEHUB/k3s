@@ -1,0 +1,14 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - namespace.yaml
+  - secret-sealed.yaml
+  - priorityclass.yaml
+  - scheduler-config.yaml
+  - build-server-config.yaml
+  - s3-credentials-sealed.yaml
+  - bucket-init-job.yaml
+  - scheduler.yaml
+  - ingress.yaml
+  - build-server.yaml
+  - client-config.yaml
