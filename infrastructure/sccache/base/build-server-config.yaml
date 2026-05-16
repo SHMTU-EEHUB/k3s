@@ -1,0 +1,35 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: sccache-build-server-config
+  namespace: sccache
+  labels:
+    app: sccache-build-server
+    app.kubernetes.io/name: sccache-build-server
+    app.kubernetes.io/component: build-server-config
+    app.kubernetes.io/part-of: eehub-infra
+data:
+  start-server.sh: |
+    #!/bin/sh
+    set -eu
+
+    mkdir -p /work /var/cache/sccache-toolchains /var/cache/sccache-build
+    SERVER_ADDR="${NODE_IP}:${SCCACHE_BUILD_SERVER_PORT}"
+    SERVER_TOKEN="$(sccache-dist auth generate-jwt-hs256-server-token --secret-key "${SCCACHE_SCHEDULER_SECRET_KEY}" --server "${SERVER_ADDR}")"
+
+    cat > /work/server.toml <<EOF
+    cache_dir = "/var/cache/sccache-toolchains"
+    public_addr = "${SERVER_ADDR}"
+    scheduler_url = "${SCCACHE_SCHEDULER_URL}"
+
+    [builder]
+    type = "overlay"
+    build_dir = "/var/cache/sccache-build"
+    bwrap_path = "/usr/bin/bwrap"
+
+    [scheduler_auth]
+    type = "jwt_token"
+    token = "${SERVER_TOKEN}"
+    EOF
+
+    exec sccache-dist server --config /work/server.toml

@@ -1,0 +1,98 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: sccache-client-config
+  namespace: sccache
+  labels:
+    app: sccache-client-config
+    app.kubernetes.io/name: sccache-client-config
+    app.kubernetes.io/component: client-example
+    app.kubernetes.io/part-of: eehub-infra
+data:
+  config.toml.example: |
+    [cache.s3]
+    bucket = "sccache"
+    endpoint = "http://minio.minio.svc.cluster.local:9000"
+    region = "us-east-1"
+
+    [dist]
+    scheduler_url = "https://sccache.eehub.mingz.top"
+    toolchains = []
+    toolchain_cache_size = 10737418240
+
+    [dist.auth]
+    type = "token"
+    token = "replace-me"
+  env.example: |
+    SCCACHE_CONF=/etc/sccache/config
+    SCCACHE_DIR=/var/cache/sccache-client
+    SCCACHE_BUCKET=sccache
+    SCCACHE_ENDPOINT=http://minio.minio.svc.cluster.local:9000
+    SCCACHE_REGION=us-east-1
+    SCCACHE_S3_USE_SSL=false
+    SCCACHE_S3_ENABLE_VIRTUAL_HOST_STYLE=false
+    RUSTC_WRAPPER=/usr/local/bin/sccache
+    # 分布式调度的 scheduler_url / dist.auth 建议通过挂载 config.toml 写入，而不是临时散落在 env 中。
+    # `sccache.eehub.mingz.top` 现在专门保留给 scheduler；S3 缓存示例默认走集群内 MinIO DNS。
+    # MinIO 仍建议保持 path-style；不要把 virtual-host-style 打开。
+    # 这里引用的 sccache-client-secret 只是 workload 示例，本 base 不会替你创建它。
+    # AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY 建议在具体 build namespace 用 Secret 注入。
+  pod-snippet.example.yaml: |
+    spec:
+      volumes:
+        - name: sccache-hot-cache
+          hostPath:
+            path: /var/cache/sccache-client
+            type: DirectoryOrCreate
+        - name: sccache-config
+          configMap:
+            name: sccache-client-config
+            items:
+              - key: config.toml.example
+                path: config
+      containers:
+        - name: builder
+          env:
+            - name: SCCACHE_CONF
+              value: /etc/sccache/config
+            - name: SCCACHE_DIR
+              value: /var/cache/sccache-client
+            - name: SCCACHE_BUCKET
+              value: sccache
+            - name: SCCACHE_ENDPOINT
+              value: http://minio.minio.svc.cluster.local:9000
+            - name: SCCACHE_REGION
+              value: us-east-1
+            - name: SCCACHE_S3_USE_SSL
+              value: "false"
+            - name: SCCACHE_S3_ENABLE_VIRTUAL_HOST_STYLE
+              value: "false"
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: sccache-client-secret
+                  key: AWS_ACCESS_KEY_ID
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: sccache-client-secret
+                  key: AWS_SECRET_ACCESS_KEY
+          volumeMounts:
+            - name: sccache-hot-cache
+              mountPath: /var/cache/sccache-client
+            - name: sccache-config
+              mountPath: /etc/sccache
+              readOnly: true
+        - name: sccache-hot-cache-cleaner
+          image: busybox:1.36
+          command:
+            - /bin/sh
+            - -ec
+            - |
+              while true; do
+                find /var/cache/sccache-client -type f -mmin +720 -delete
+                sleep 3600
+              done
+          volumeMounts:
+            - name: sccache-hot-cache
+              mountPath: /var/cache/sccache-client

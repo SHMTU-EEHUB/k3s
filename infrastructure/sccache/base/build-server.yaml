@@ -1,0 +1,117 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: sccache-build-server
+  namespace: sccache
+  labels:
+    app: sccache-build-server
+    app.kubernetes.io/name: sccache-build-server
+    app.kubernetes.io/component: build-server
+    app.kubernetes.io/part-of: eehub-infra
+spec:
+  selector:
+    matchLabels:
+      app: sccache-build-server
+  updateStrategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: sccache-build-server
+        app.kubernetes.io/name: sccache-build-server
+        app.kubernetes.io/component: build-server
+        app.kubernetes.io/part-of: eehub-infra
+    spec:
+      automountServiceAccountToken: false
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
+      priorityClassName: sccache-opportunistic-build
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/os
+                    operator: In
+                    values:
+                      - linux
+                  - key: eehub.mingz.top/sccache-worker
+                    operator: In
+                    values:
+                      - "true"
+                  - key: eehub.mingz.top/sccache-dist-enabled
+                    operator: In
+                    values:
+                      - "true"
+      containers:
+        - name: build-server
+          image: ghcr.io/zjm54321/sccache-dist:v0.15.0
+          imagePullPolicy: IfNotPresent
+          command:
+            - /bin/sh
+            - /config/start-server.sh
+          securityContext:
+            privileged: true
+            runAsUser: 0
+          ports:
+            - name: build-server
+              containerPort: 10501
+              protocol: TCP
+          env:
+            - name: NODE_IP
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: status.hostIP
+            - name: SCCACHE_BUILD_SERVER_PORT
+              value: "10501"
+            - name: SCCACHE_SCHEDULER_URL
+              value: http://sccache-scheduler.sccache.svc.cluster.local:10600
+            - name: SCCACHE_SCHEDULER_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: sccache-secret
+                  key: SCCACHE_SCHEDULER_SECRET_KEY
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: "4"
+              memory: 3Gi
+          readinessProbe:
+            tcpSocket:
+              port: 10501
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 6
+          livenessProbe:
+            tcpSocket:
+              port: 10501
+            initialDelaySeconds: 30
+            periodSeconds: 20
+            timeoutSeconds: 5
+            failureThreshold: 6
+          volumeMounts:
+            - name: config
+              mountPath: /config
+              readOnly: true
+            - name: work
+              mountPath: /work
+            - name: toolchains
+              mountPath: /var/cache/sccache-toolchains
+            - name: build-dir
+              mountPath: /var/cache/sccache-build
+      volumes:
+        - name: config
+          configMap:
+            name: sccache-build-server-config
+        - name: work
+          emptyDir: {}
+        - name: toolchains
+          emptyDir:
+            sizeLimit: 10Gi
+        - name: build-dir
+          emptyDir:
+            sizeLimit: 20Gi
