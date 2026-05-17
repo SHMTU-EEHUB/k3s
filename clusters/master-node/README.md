@@ -10,7 +10,6 @@
 - `../../infrastructure/cert-manager/base`
 - `../../infrastructure/authentik/base`
 - `../../infrastructure/mihomo/base`
-- `../../infrastructure/buildbarn/base`
 - `../../apps/cloudflare-ddns/base`
 - `../../apps/ai-services/base`
 
@@ -35,5 +34,3 @@ Sealed Secrets Controller 由 Helm 管理，配置见 `../../infrastructure/seal
 
 - cert-manager Helm Release 由 `./cert-manager-app.yaml` 接管，`ClusterIssuer` 仍由本目录中的 Kustomize 资源管理。
 - Authentik Helm Release 由 `./authentik-app.yaml` 接管，`authentik-config` 仍由本目录中的 SealedSecret 管理。
-- `buildbarn` 当前接管分布式编译 / 共享缓存路径；对外只暴露 `https://build.eehub.mingz.top` 作为 REAPI / gRPC 入口。
-- `buildbarn` 不暴露 public browser UI；当前节点口径为 `master1` 跑 `frontend + scheduler`，`worker1.eehub.mingz.top` 跑 `storage + worker-rust`。
