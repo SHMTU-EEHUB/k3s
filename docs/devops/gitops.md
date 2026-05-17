@@ -18,7 +18,6 @@
 - `infrastructure/authentik/base`：Authentik 的命名空间、Helm values、加密后的 `authentik-config`（由 root Kustomize / ArgoCD 同步）。
 - `infrastructure/mihomo/base`：Mihomo 网关、MetaCubeXD UI、控制器 / Web UI NodePort、ClusterIP / Headless Service、加密后的 `mihomo-config`。
 - `infrastructure/longhorn/base`：Longhorn StorageClass、单节点副本设置、`master1` 磁盘声明，以及系统 SSD 先纳入 `fast` 层、后迁 worker SSD 的策略。
-- `infrastructure/buildbarn/base`：BuildBarn REAPI 基础设施，包括 `frontend`、`scheduler`、`storage`、`worker-rust`、`Certificate` 与 Traefik `IngressRoute`；当前两层缓存口径为 worker 本地热缓存 + `longhorn-fast-1replica` 上的 `200Gi` 共享持久层。
 
 - `apps/cloudflare-ddns/base`：Cloudflare DDNS ConfigMap、Deployment、加密后的 `cloudflare-ddns-secret`。
 - `apps/ai-services/base`：AI 服务组，包括共享 PostgreSQL（`longhorn-fast-1replica`）、Metapi、Aether（Rust Pioneer）+ 专用 Redis、GPT-Load 与 Codex2API 共用 Redis、OutlookEmail、Kiro、CLIProxyAPI、Grok2API，以及加密后的 `secret-sealed.yaml`。
