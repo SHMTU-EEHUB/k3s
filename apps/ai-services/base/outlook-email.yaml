@@ -63,7 +63,7 @@ spec:
       automountServiceAccountToken: false
       containers:
         - name: outlook-email
-          image: ghcr.io/assast/outlookemail:v2.0.53
+          image: ghcr.io/zeropointsix/outlook-email-plus:main-9a8fe77@sha256:27d410788a364fb834c88dc2fbc0ad063b31f81c2351814392796753b1d464e0
           imagePullPolicy: Always
           ports:
             - name: http
@@ -114,14 +114,16 @@ spec:
               cpu: "1"
               memory: 2Gi
           readinessProbe:
-            tcpSocket:
+            httpGet:
+              path: /healthz
               port: 5000
             initialDelaySeconds: 20
             periodSeconds: 10
             timeoutSeconds: 5
             failureThreshold: 6
           livenessProbe:
-            tcpSocket:
+            httpGet:
+              path: /healthz
               port: 5000
             initialDelaySeconds: 60
             periodSeconds: 20
