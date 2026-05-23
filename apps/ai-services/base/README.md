@@ -15,7 +15,7 @@
 - `Deployment/gpt-load`：GPT-Load 多渠道 AI 代理，走 Mihomo 默认节点，使用共享 PostgreSQL 与共享 Redis。
 - `Deployment/codex2api`：Codex2API 管理台与 API 网关，走 Mihomo 默认节点，使用共享 PostgreSQL 与共享 Redis。
 - `Deployment/halowebui`：HaloWebUI AI Web 控制台，走 Mihomo 默认节点，使用共享 PostgreSQL 与共享 Redis。
-- `Deployment/outlook-email`：Outlook / IMAP 邮箱管理台，默认仅内部访问，走 Mihomo 默认节点，使用本地 SQLite。
+- `Deployment/outlook-email`：OutlookMail Plus 邮箱管理台，默认仅内部访问，走 Mihomo 默认节点，使用本地 SQLite。
 
 ## 敏感信息
 
@@ -70,7 +70,7 @@
   - GPT-Load 数据 PVC：`5Gi`，`longhorn-hdd-1replica`
   - Codex2API 数据 PVC：`5Gi`，`longhorn-hdd-1replica`
   - HaloWebUI 数据 PVC：`5Gi`，`longhorn-hdd-1replica`
-  - OutlookEmail 数据 PVC：`5Gi`，`longhorn-hdd-1replica`
+  - OutlookMail Plus 数据 PVC：`5Gi`，`longhorn-hdd-1replica`
 
 ## 初始化说明
 
@@ -87,5 +87,5 @@
 - `halowebui` 使用 initContainer 幂等创建 `halowebui` 数据库与用户；当前按 PostgreSQL + Redis 运行，使用 `ai-services-redis` 的 database 2，通过 `ai-services-redis-secret` 中的 default Redis 密码连接，并通过 `WEBSOCKET_MANAGER=redis` 将 WebSocket 事件同步也挂到共享 Redis。
 - `halowebui` 数据目录固定为 `/app/backend/data`，用于保留上传内容与运行时缓存；`WEBUI_SECRET_KEY` 必须稳定，首次注册用户会成为管理员。
 - `halowebui-secret` 只保存 HaloWebUI 自身的 `WEBUI_SECRET_KEY`、`HALOWEBUI_DB_PASSWORD` 与 `DATABASE_URL`；共享 Redis 密码继续由 `ai-services-redis-secret` 统一保存。
-- `outlook-email` 当前固定使用 `ghcr.io/assast/outlookemail:v2.0.53`，数据目录为 `/app/data`，SQLite 数据库位于 `/app/data/outlook_accounts.db`，并通过 `SECRET_KEY` 与 `LOGIN_PASSWORD` 控制初始登录与加密状态。
-- `outlook-email` 按上游建议保持单副本 + `Recreate`，不启用 Docker socket 在线更新；由于未确认稳定 HTTP 健康路由，当前使用 `tcpSocket:5000` 探针。
+- OutlookMail Plus（`outlook-email`）当前固定使用 `ghcr.io/zeropointsix/outlook-email-plus:main-9a8fe77@sha256:27d410788a364fb834c88dc2fbc0ad063b31f81c2351814392796753b1d464e0`（上游 2026-05-19 发布窗口的可拉取镜像，registry 暂无 `v2.6.0` 镜像 tag），数据目录为 `/app/data`，SQLite 数据库位于 `/app/data/outlook_accounts.db`，并通过 `SECRET_KEY` 与 `LOGIN_PASSWORD` 控制初始登录与加密状态。
+- OutlookMail Plus（`outlook-email`）按上游建议保持单副本 + `Recreate`，不启用 Docker socket / Watchtower 自更新；Kubernetes 中未挂载 Docker socket，健康检查使用 `/healthz`。
