@@ -3,6 +3,7 @@ archive/
 
 # Local/private files
 .agent-tmp/
+.sisyphus/
 .env
 .env.*
 *.local.yaml
