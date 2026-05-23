@@ -83,7 +83,7 @@ spec:
               readOnly: true
       containers:
         - name: kiro-rs
-          image: ghcr.io/hank9999/kiro-rs:latest
+          image: ghcr.io/hank9999/kiro-rs:v2026.3.1
           imagePullPolicy: Always
           ports:
             - name: http
