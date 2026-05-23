@@ -63,7 +63,7 @@ spec:
       automountServiceAccountToken: false
       containers:
         - name: outlook-email
-          image: ghcr.io/assast/outlookemail:v2.0.46
+          image: ghcr.io/assast/outlookemail:v2.0.53
           imagePullPolicy: Always
           ports:
             - name: http

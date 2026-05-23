@@ -77,7 +77,7 @@
 - PostgreSQL 首次在空数据目录启动时，会执行 `ConfigMap/ai-postgresql-init` 中的脚本，创建 `metapi` 数据库和对应用户。
 - `metapi` 额外挂载 `/app/data`，用于保留本地运行数据与非数据库文件状态。
 - `aether` 额外使用 initContainer 幂等创建 / 修正 `aether` 数据库与用户，兼容当前已运行的共享 PostgreSQL。
-- `aether` 当前固定使用上游 `ghcr.io/fawney19/aether:0.7.0`，对应 Rust Pioneer 路线的 `v0.7.0` 正式版本。
+- `aether` 当前固定使用上游 `ghcr.io/fawney19/aether:0.7.4`，对应 Rust Pioneer 路线的正式版本。
 - `kiro-rs` 通过 initContainer 将 `config.json` 与初始 `credentials.json` 复制到可写 PVC，避免 Token 刷新后无法回写。
 - `cli-proxy-api` 通过 initContainer 将 `config.yaml` 复制到 PVC，并初始化持久化 `auths` 目录。
 - `grok2api` 通过 initContainer 首次将 Secret 中的 `config.toml` 复制到 PVC；后续运行时配置、SQLite 账号库与日志都保存在同一个持久化卷中。
@@ -87,5 +87,5 @@
 - `halowebui` 使用 initContainer 幂等创建 `halowebui` 数据库与用户；当前按 PostgreSQL + Redis 运行，使用 `ai-services-redis` 的 database 2，通过 `ai-services-redis-secret` 中的 default Redis 密码连接，并通过 `WEBSOCKET_MANAGER=redis` 将 WebSocket 事件同步也挂到共享 Redis。
 - `halowebui` 数据目录固定为 `/app/backend/data`，用于保留上传内容与运行时缓存；`WEBUI_SECRET_KEY` 必须稳定，首次注册用户会成为管理员。
 - `halowebui-secret` 只保存 HaloWebUI 自身的 `WEBUI_SECRET_KEY`、`HALOWEBUI_DB_PASSWORD` 与 `DATABASE_URL`；共享 Redis 密码继续由 `ai-services-redis-secret` 统一保存。
-- `outlook-email` 当前固定使用 `ghcr.io/assast/outlookemail:v2.0.46`，数据目录为 `/app/data`，SQLite 数据库位于 `/app/data/outlook_accounts.db`，并通过 `SECRET_KEY` 与 `LOGIN_PASSWORD` 控制初始登录与加密状态。
+- `outlook-email` 当前固定使用 `ghcr.io/assast/outlookemail:v2.0.53`，数据目录为 `/app/data`，SQLite 数据库位于 `/app/data/outlook_accounts.db`，并通过 `SECRET_KEY` 与 `LOGIN_PASSWORD` 控制初始登录与加密状态。
 - `outlook-email` 按上游建议保持单副本 + `Recreate`，不启用 Docker socket 在线更新；由于未确认稳定 HTTP 健康路由，当前使用 `tcpSocket:5000` 探针。
