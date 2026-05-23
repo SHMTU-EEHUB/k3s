@@ -14,6 +14,7 @@
 - `Deployment/grok2api`：Grok Web 转 OpenAI / Anthropic 兼容 API，默认仅内部访问，走 Mihomo 默认节点。
 - `Deployment/gpt-load`：GPT-Load 多渠道 AI 代理，走 Mihomo 默认节点，使用共享 PostgreSQL 与共享 Redis。
 - `Deployment/codex2api`：Codex2API 管理台与 API 网关，走 Mihomo 默认节点，使用共享 PostgreSQL 与共享 Redis。
+- `Deployment/halowebui`：HaloWebUI AI Web 控制台，走 Mihomo 默认节点，使用共享 PostgreSQL 与共享 Redis。
 - `Deployment/outlook-email`：Outlook / IMAP 邮箱管理台，默认仅内部访问，走 Mihomo 默认节点，使用本地 SQLite。
 
 ## 敏感信息
@@ -35,6 +36,7 @@
 - `ai-services-redis-secret`
 - `gpt-load-secret`
 - `codex2api-secret`
+- `halowebui-secret`
 - `outlook-email-secret`
 
 ## 当前运行口径
@@ -42,8 +44,9 @@
 - 命名空间：`ai-services`
 - 暴露方式：
   - `Service/aether` 使用 NodePort `30884`，可在可信 LAN / Tailscale 内通过 `100.100.1.2:30884` 访问。
-  - Traefik Ingress 仍提供域名入口：`ai.eehub.mingz.top` → `Service/aether:8084`，`metaapi.eehub.mingz.top` → `Service/metapi:4000`。
+  - Traefik Ingress 仍提供域名入口：`ai.eehub.mingz.top` → `Service/aether:8084`，`metaapi.eehub.mingz.top` → `Service/metapi:4000`，`chat.eehub.mingz.top` → `Service/halowebui:8080`。
   - `ai.eehub.mingz.top` 默认同时保留 HTTP / HTTPS；`metaapi.eehub.mingz.top` 暂时保持 HTTP。
+  - `chat.eehub.mingz.top` 通过 Traefik + cert-manager 提供 HTTPS，并承载 HaloWebUI 的 WebSocket 路由。
   - `metapi`：除 Ingress 外不暴露 NodePort，`Service/metapi:4000` 保持 ClusterIP。
   - `grok2api`：仅内部访问，`Service/grok2api:8000`。
 - 出站代理：
@@ -54,6 +57,7 @@
   - `grok2api`：默认 Mihomo 节点 `7897`
   - `gpt-load`：默认 Mihomo 节点 `7897`
   - `codex2api`：默认 Mihomo 节点 `7897`
+  - `halowebui`：默认 Mihomo 节点 `7897`
   - `outlook-email`：默认 Mihomo 节点 `7897`
 - 数据持久化：
   - PostgreSQL：`20Gi`，`longhorn-fast-1replica`
@@ -65,6 +69,7 @@
   - Grok2API 数据 PVC：`5Gi`，`longhorn-hdd-1replica`
   - GPT-Load 数据 PVC：`5Gi`，`longhorn-hdd-1replica`
   - Codex2API 数据 PVC：`5Gi`，`longhorn-hdd-1replica`
+  - HaloWebUI 数据 PVC：`5Gi`，`longhorn-hdd-1replica`
   - OutlookEmail 数据 PVC：`5Gi`，`longhorn-hdd-1replica`
 
 ## 初始化说明
@@ -79,5 +84,8 @@
 - 如需强制刷新 `grok2api` 的初始配置，需要同时更新 `grok2api-secret` 中的 `bootstrap-version`，这样 Pod 重建后会重新覆盖 PVC 内的 `config.toml`。
 - `gpt-load` 使用 initContainer 幂等创建 `gpt_load` 数据库与用户；当前按 PostgreSQL + Redis 运行，使用 `ai-services-redis` 的 database 0，并显式保留 Mihomo 默认代理，运行日志保存在 `/app/data/logs`。
 - `codex2api` 使用 initContainer 幂等创建 `codex2api` 数据库与用户；当前按 PostgreSQL + Redis 缓存运行，使用 `ai-services-redis` 的 database 1，运行期图片与日志保存在 `/data`。
+- `halowebui` 使用 initContainer 幂等创建 `halowebui` 数据库与用户；当前按 PostgreSQL + Redis 运行，使用 `ai-services-redis` 的 database 2，通过 `ai-services-redis-secret` 中的 default Redis 密码连接，并通过 `WEBSOCKET_MANAGER=redis` 将 WebSocket 事件同步也挂到共享 Redis。
+- `halowebui` 数据目录固定为 `/app/backend/data`，用于保留上传内容与运行时缓存；`WEBUI_SECRET_KEY` 必须稳定，首次注册用户会成为管理员。
+- `halowebui-secret` 只保存 HaloWebUI 自身的 `WEBUI_SECRET_KEY`、`HALOWEBUI_DB_PASSWORD` 与 `DATABASE_URL`；共享 Redis 密码继续由 `ai-services-redis-secret` 统一保存。
 - `outlook-email` 当前固定使用 `ghcr.io/assast/outlookemail:v2.0.46`，数据目录为 `/app/data`，SQLite 数据库位于 `/app/data/outlook_accounts.db`，并通过 `SECRET_KEY` 与 `LOGIN_PASSWORD` 控制初始登录与加密状态。
 - `outlook-email` 按上游建议保持单副本 + `Recreate`，不启用 Docker socket 在线更新；由于未确认稳定 HTTP 健康路由，当前使用 `tcpSocket:5000` 探针。
