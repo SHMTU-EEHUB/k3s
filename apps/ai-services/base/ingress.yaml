@@ -50,3 +50,32 @@ spec:
                 name: metapi
                 port:
                   number: 4000
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: halowebui-web
+  namespace: ai-services
+  labels:
+    app.kubernetes.io/name: halowebui-web
+    app.kubernetes.io/part-of: eehub-ai-services
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    traefik.ingress.kubernetes.io/router.entrypoints: web,websecure
+spec:
+  ingressClassName: traefik
+  tls:
+    - secretName: chat-eehub-mingz-top-tls
+      hosts:
+        - chat.eehub.mingz.top
+  rules:
+    - host: chat.eehub.mingz.top
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: halowebui
+                port:
+                  number: 8080
