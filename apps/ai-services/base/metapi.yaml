@@ -63,7 +63,7 @@ spec:
       automountServiceAccountToken: false
       containers:
         - name: metapi
-          image: 1467078763/metapi:latest
+          image: 1467078763/metapi:sha-c308a3e
           imagePullPolicy: Always
           ports:
             - name: http
