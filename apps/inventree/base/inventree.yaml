@@ -9,6 +9,7 @@ metadata:
     app.kubernetes.io/part-of: eehub-inventree
 data:
   INVENTREE_SITE_URL: https://inventory.eehub.mingz.top
+  INVENTREE_LANGUAGE: zh-hans
   INVENTREE_WEB_PORT: "8000"
   INVENTREE_USE_X_FORWARDED_HOST: "True"
   INVENTREE_USE_X_FORWARDED_PORT: "True"
@@ -177,6 +178,8 @@ spec:
     type: Recreate
   template:
     metadata:
+      annotations:
+        eehub.mingz.top/config-revision: inventree-language-zh-hans-20260525
       labels:
         app: inventree-server
         app.kubernetes.io/name: inventree-server
@@ -367,6 +370,8 @@ spec:
     type: Recreate
   template:
     metadata:
+      annotations:
+        eehub.mingz.top/config-revision: inventree-language-zh-hans-20260525
       labels:
         app: inventree-worker
         app.kubernetes.io/name: inventree-worker
