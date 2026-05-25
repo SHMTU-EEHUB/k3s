@@ -195,6 +195,51 @@ spec:
           volumeMounts:
             - name: data
               mountPath: /home/inventree/data
+        - name: inventree-update
+          image: inventree/inventree:stable
+          imagePullPolicy: Always
+          args:
+            - invoke
+            - update
+            - --skip-backup
+            - --frontend
+          envFrom:
+            - configMapRef:
+                name: inventree-config
+          env:
+            - name: INVENTREE_DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: inventree-postgresql-secret
+                  key: INVENTREE_DB_PASSWORD
+            - name: INVENTREE_CACHE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: inventree-redis-secret
+                  key: REDIS_PASSWORD
+            - name: INVENTREE_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: inventree-secret
+                  key: INVENTREE_SECRET_KEY
+            - name: INVENTREE_ADMIN_USER
+              valueFrom:
+                secretKeyRef:
+                  name: inventree-secret
+                  key: INVENTREE_ADMIN_USER
+            - name: INVENTREE_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: inventree-secret
+                  key: INVENTREE_ADMIN_PASSWORD
+            - name: INVENTREE_ADMIN_EMAIL
+              valueFrom:
+                secretKeyRef:
+                  name: inventree-secret
+                  key: INVENTREE_ADMIN_EMAIL
+          volumeMounts:
+            - name: data
+              mountPath: /home/inventree/data
       containers:
         - name: inventree-server
           image: inventree/inventree:stable
