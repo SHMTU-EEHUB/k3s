@@ -1,0 +1,122 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: inventree-redis
+  namespace: inventory
+  labels:
+    app: inventree-redis
+    app.kubernetes.io/name: inventree-redis
+    app.kubernetes.io/component: cache
+    app.kubernetes.io/part-of: eehub-inventree
+spec:
+  type: ClusterIP
+  selector:
+    app: inventree-redis
+  ports:
+    - name: redis
+      protocol: TCP
+      port: 6379
+      targetPort: 6379
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: inventree-redis-data
+  namespace: inventory
+  labels:
+    app.kubernetes.io/name: inventree-redis
+    app.kubernetes.io/component: cache
+    app.kubernetes.io/part-of: eehub-inventree
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: longhorn-hdd-1replica
+  resources:
+    requests:
+      storage: 2Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: inventree-redis
+  namespace: inventory
+  labels:
+    app: inventree-redis
+    app.kubernetes.io/name: inventree-redis
+    app.kubernetes.io/component: cache
+    app.kubernetes.io/part-of: eehub-inventree
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: inventree-redis
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: inventree-redis
+        app.kubernetes.io/name: inventree-redis
+        app.kubernetes.io/component: cache
+        app.kubernetes.io/part-of: eehub-inventree
+    spec:
+      automountServiceAccountToken: false
+      containers:
+        - name: redis
+          image: redis:7-alpine
+          imagePullPolicy: Always
+          command:
+            - sh
+            - -ec
+            - |
+              exec redis-server \
+                --appendonly yes \
+                --appendfsync everysec \
+                --save 60 1000 \
+                --requirepass "$REDIS_PASSWORD"
+          ports:
+            - name: redis
+              containerPort: 6379
+              protocol: TCP
+          env:
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: inventree-redis-secret
+                  key: REDIS_PASSWORD
+            - name: TZ
+              value: Asia/Shanghai
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 250m
+              memory: 256Mi
+          readinessProbe:
+            exec:
+              command:
+                - sh
+                - -ec
+                - redis-cli -a "$REDIS_PASSWORD" ping | grep -q PONG
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 6
+          livenessProbe:
+            exec:
+              command:
+                - sh
+                - -ec
+                - redis-cli -a "$REDIS_PASSWORD" ping | grep -q PONG
+            initialDelaySeconds: 30
+            periodSeconds: 20
+            timeoutSeconds: 5
+            failureThreshold: 6
+          volumeMounts:
+            - name: data
+              mountPath: /data
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: inventree-redis-data
