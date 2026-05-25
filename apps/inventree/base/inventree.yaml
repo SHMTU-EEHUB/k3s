@@ -12,6 +12,8 @@ data:
   INVENTREE_LANGUAGE: zh-hans
   INVENTREE_SOCIAL_BACKENDS: allauth.socialaccount.providers.openid_connect
   INVENTREE_LOGIN_DEFAULT_HTTP_PROTOCOL: https
+  INVENTREE_EMAIL_BACKEND: django.core.mail.backends.console.EmailBackend
+  INVENTREE_EMAIL_SENDER: inventree@eehub.local
   INVENTREE_WEB_PORT: "8000"
   INVENTREE_USE_X_FORWARDED_HOST: "True"
   INVENTREE_USE_X_FORWARDED_PORT: "True"
@@ -181,7 +183,7 @@ spec:
   template:
     metadata:
       annotations:
-        eehub.mingz.top/config-revision: inventree-oidc-openid-connect-20260525
+        eehub.mingz.top/config-revision: inventree-console-email-20260525
       labels:
         app: inventree-server
         app.kubernetes.io/name: inventree-server
@@ -373,7 +375,7 @@ spec:
   template:
     metadata:
       annotations:
-        eehub.mingz.top/config-revision: inventree-oidc-openid-connect-20260525
+        eehub.mingz.top/config-revision: inventree-console-email-20260525
       labels:
         app: inventree-worker
         app.kubernetes.io/name: inventree-worker
