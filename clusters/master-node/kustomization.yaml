@@ -9,3 +9,4 @@ resources:
   - ../../infrastructure/mihomo/base
   - ../../apps/cloudflare-ddns/base
   - ../../apps/ai-services/base
+  - ../../apps/inventree/base
