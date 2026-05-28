@@ -18,7 +18,7 @@ spec:
   template:
     metadata:
       annotations:
-        eehub.mingz.top/mihomo-config-revision: tun-gateway-v2
+        eehub.mingz.top/mihomo-config-revision: root-mihomo-panel-clean-v1
       labels:
         app: mihomo
         app.kubernetes.io/name: mihomo

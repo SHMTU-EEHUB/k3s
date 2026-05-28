@@ -54,6 +54,63 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
+  name: mihomo-gpt-listener
+  namespace: default
+  labels:
+    app.kubernetes.io/name: mihomo
+    app.kubernetes.io/component: gpt-listener-proxy
+    app.kubernetes.io/part-of: eehub-infra
+spec:
+  type: ClusterIP
+  selector:
+    app: mihomo
+  ports:
+    - name: gpt-listener
+      protocol: TCP
+      port: 7910
+      targetPort: 7910
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mihomo-us-listener
+  namespace: default
+  labels:
+    app.kubernetes.io/name: mihomo
+    app.kubernetes.io/component: us-listener-proxy
+    app.kubernetes.io/part-of: eehub-infra
+spec:
+  type: ClusterIP
+  selector:
+    app: mihomo
+  ports:
+    - name: us-node
+      protocol: TCP
+      port: 7911
+      targetPort: 7911
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mihomo-jp-listener
+  namespace: default
+  labels:
+    app.kubernetes.io/name: mihomo
+    app.kubernetes.io/component: jp-listener-proxy
+    app.kubernetes.io/part-of: eehub-infra
+spec:
+  type: ClusterIP
+  selector:
+    app: mihomo
+  ports:
+    - name: jp-node
+      protocol: TCP
+      port: 7912
+      targetPort: 7912
+---
+apiVersion: v1
+kind: Service
+metadata:
   name: mihomo-api-ui
   namespace: default
   labels:
