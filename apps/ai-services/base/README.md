@@ -9,13 +9,13 @@
 - `Deployment/aether`：Rust Pioneer 版 AI 网关，当前作为新的统一入口。
 - `Deployment/aether-redis`：Aether 专用 Redis。
 - `Deployment/ai-services-redis`：GPT-Load、Codex2API 与 HaloWebUI 共用 Redis。
-- `Deployment/kiro-rs`：Kiro 反代，走 Mihomo clean 节点。
+- `Deployment/kiro-rs`：Kiro 反代，走 Mihomo GPT 专用节点。
 - `Deployment/cli-proxy-api`：Codex / CLIProxyAPI 反代，走 Mihomo 默认节点。
 - `Deployment/grok2api`：Grok Web 转 OpenAI / Anthropic 兼容 API，默认仅内部访问，走 Mihomo 默认节点。
 - `Deployment/gpt-load`：GPT-Load 多渠道 AI 代理，走 Mihomo 默认节点，使用共享 PostgreSQL 与共享 Redis。
 - `Deployment/codex2api`：Codex2API 管理台与 API 网关，走 Mihomo 默认节点，使用共享 PostgreSQL 与共享 Redis。
 - `Deployment/halowebui`：HaloWebUI AI Web 控制台，走 Mihomo 默认节点，使用共享 PostgreSQL 与共享 Redis。
-- `Deployment/gemini-web2api`：Gemini Web 转 OpenAI 兼容 API，默认仅内部访问，走 Mihomo 默认节点，使用 SealedSecret 保存 `config.json` 与 API key。
+- `Deployment/gemini-web2api`：Gemini Web 转 OpenAI 兼容 API，默认仅内部访问，走 Mihomo 默认节点，使用 ConfigMap 保存非敏感配置，不启用应用层 API key。
 - `Deployment/outlook-email`：OutlookMail Plus 邮箱管理台，默认仅内部访问，走 Mihomo 默认节点，使用本地 SQLite。
 
 ## 敏感信息
@@ -38,35 +38,14 @@
 - `gpt-load-secret`
 - `codex2api-secret`
 - `halowebui-secret`
-- `gemini-web2api-secret`
 - `outlook-email-secret`
 
-`gemini-web2api` 的 `/app/config.json` 包含 `api_keys`，因此通过 `gemini-web2api-secret` / `secret-sealed.yaml` 管理；仓库只保留占位模板和加密后的 SealedSecret，不提交明文 API key。
-
-## Gemini Web2API 访问与密钥
+## Gemini Web2API 访问
 
 - 集群内完整地址：`http://gemini-web2api.ai-services.svc.cluster.local:8081`
 - `ai-services` 命名空间内短地址：`http://gemini-web2api:8081`
-- 仅限容器 / 集群内部访问：未配置 Ingress、NodePort、LoadBalancer 或 HTTPRoute。
-- API key 不在 Git 明文中保存；部署后从 Kubernetes Secret 解密结果读取。
-
-读取完整运行配置：
-
-```powershell
-ssh root@100.100.1.2 'kubectl -n ai-services get secret gemini-web2api-secret -o jsonpath="{.data.config\.json}" | base64 -d'
-```
-
-只读取 API key：
-
-```powershell
-ssh root@100.100.1.2 'kubectl -n ai-services get secret gemini-web2api-secret -o jsonpath="{.data.config\.json}" | base64 -d | python3 -c "import json,sys; print(json.load(sys.stdin)[\"api_keys\"][0])"'
-```
-
-不打印密钥、只确认容器内配置文件存在：
-
-```powershell
-ssh root@100.100.1.2 'kubectl -n ai-services exec deploy/gemini-web2api -- test -s /app/config.json'
-```
+- 仅限 Kubernetes 集群内部访问：未配置 Ingress、NodePort、LoadBalancer 或 HTTPRoute；这不是“同一个容器内”限定，而是集群内 Pod / 节点可访问。
+- 当前 `ConfigMap/gemini-web2api-config` 中 `api_keys: []`，上游会关闭应用层鉴权；随意填写或不填写 Bearer key 都不影响访问，因此不为 Gemini 额外配置 Secret。
 
 ## 当前运行口径
 
@@ -82,7 +61,7 @@ ssh root@100.100.1.2 'kubectl -n ai-services exec deploy/gemini-web2api -- test 
 - 出站代理：
   - `aether`：默认 Mihomo 节点 `7897`
   - `metapi`：默认 Mihomo 节点 `7897`
-  - `kiro-rs`：clean Mihomo 节点 `7896`
+  - `kiro-rs`：GPT Mihomo 节点 `mihomo-gpt-listener:7910`
   - `cli-proxy-api`：默认 Mihomo 节点 `7897`
   - `grok2api`：默认 Mihomo 节点 `7897`
   - `gpt-load`：默认 Mihomo 节点 `7897`
@@ -109,7 +88,7 @@ ssh root@100.100.1.2 'kubectl -n ai-services exec deploy/gemini-web2api -- test 
 - `metapi` 额外挂载 `/app/data`，用于保留本地运行数据与非数据库文件状态。
 - `aether` 额外使用 initContainer 幂等创建 / 修正 `aether` 数据库与用户，兼容当前已运行的共享 PostgreSQL。
 - `aether` 当前固定使用上游 `ghcr.io/fawney19/aether:0.7.7@sha256:99c0339d2ad69fbd1ca01f98e3155176560724c1670d95e81b6a02d272d7aef0`，对应 Rust Pioneer 路线的正式版本。
-- `kiro-rs` 通过 initContainer 将 `config.json` 与初始 `credentials.json` 复制到可写 PVC，避免 Token 刷新后无法回写。
+- `kiro-rs` 通过 initContainer 将 `config.json` 与初始 `credentials.json` 复制到可写 PVC，避免 Token 刷新后无法回写；当前代理指向 `http://mihomo-gpt-listener.default.svc.cluster.local:7910`。
 - `cli-proxy-api` 通过 initContainer 将 `config.yaml` 复制到 PVC，并初始化持久化 `auths` 目录。
 - `grok2api` 通过 initContainer 首次将 Secret 中的 `config.toml` 复制到 PVC；后续运行时配置、SQLite 账号库与日志都保存在同一个持久化卷中。
 - 如需强制刷新 `grok2api` 的初始配置，需要同时更新 `grok2api-secret` 中的 `bootstrap-version`，这样 Pod 重建后会重新覆盖 PVC 内的 `config.toml`。
@@ -118,7 +97,7 @@ ssh root@100.100.1.2 'kubectl -n ai-services exec deploy/gemini-web2api -- test 
 - `halowebui` 使用 initContainer 幂等创建 `halowebui` 数据库与用户；当前固定使用 `ghcr.io/ztx888/halowebui:main@sha256:b412ab407bd89c5e204031f2d0f03b4a26fa99b1fd2b98043330b810f661b5fe`，按 PostgreSQL + Redis 运行，使用 `ai-services-redis` 的 database 2，通过 `ai-services-redis-secret` 中的 default Redis 密码连接，并通过 `WEBSOCKET_MANAGER=redis` 将 WebSocket 事件同步也挂到共享 Redis。
 - `halowebui` 数据目录固定为 `/app/backend/data`，用于保留上传内容与运行时缓存；`WEBUI_SECRET_KEY` 必须稳定，首次注册用户会成为管理员。
 - `halowebui-secret` 只保存 HaloWebUI 自身的 `WEBUI_SECRET_KEY`、`HALOWEBUI_DB_PASSWORD` 与 `DATABASE_URL`；共享 Redis 密码继续由 `ai-services-redis-secret` 统一保存。
-- `gemini-web2api` 当前固定使用 `ghcr.io/sophomoresty/gemini-web2api:latest@sha256:3012cde052f25f0d9ff4bcde7df333da228bb5e5baa637a368c0c82b153271ac`，通过 `Secret/gemini-web2api-secret` 挂载 `/app/config.json`，监听 `0.0.0.0:8081`，配置内显式启用生成的 `api_keys` 并使用 Mihomo 默认代理 `http://mihomo-proxy-nodeport.default.svc.cluster.local:7897`；明文 key 只允许保存在本地忽略目录中。
+- `gemini-web2api` 当前固定使用 `ghcr.io/sophomoresty/gemini-web2api:latest@sha256:3012cde052f25f0d9ff4bcde7df333da228bb5e5baa637a368c0c82b153271ac`，通过 `ConfigMap/gemini-web2api-config` 挂载 `/app/config.json`，监听 `0.0.0.0:8081`，配置内保留 `api_keys: []`，不启用应用层 API key，并使用 Mihomo 默认代理 `http://mihomo-proxy-nodeport.default.svc.cluster.local:7897`。
 - OutlookMail Plus（`outlook-email`）当前固定使用 `ghcr.io/zeropointsix/outlook-email-plus:v2.7.0@sha256:4b0c000675c4ec8ad36bab1f5c5e03ed32fa3c7f1ce54740eb09994ff1620d7e`，数据目录为 `/app/data`，SQLite 数据库位于 `/app/data/outlook_accounts.db`，并通过 `SECRET_KEY` 与 `LOGIN_PASSWORD` 控制初始登录与加密状态。
 - OutlookMail Plus（`outlook-email`）上游标签检查结果：`v2.7.0` 截至 2026-06-02 仍为当前标签；仓库内没有明文 Secret，无法在 Git 中执行明文凭据轮换。
 - OutlookMail Plus（`outlook-email`）按上游建议保持单副本 + `Recreate`，不启用 Docker socket / Watchtower 自更新；Kubernetes 中未挂载 Docker socket，健康检查使用 `/healthz`。

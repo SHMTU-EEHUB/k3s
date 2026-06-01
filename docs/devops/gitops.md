@@ -20,7 +20,7 @@
 - `infrastructure/longhorn/base`：Longhorn StorageClass、单节点副本设置、`master1` 磁盘声明，以及系统 SSD 先纳入 `fast` 层、后迁 worker SSD 的策略。
 
 - `apps/cloudflare-ddns/base`：Cloudflare DDNS ConfigMap、Deployment、加密后的 `cloudflare-ddns-secret`。
-- `apps/ai-services/base`：AI 服务组，包括共享 PostgreSQL（`longhorn-fast-1replica`）、Metapi、Aether（Rust Pioneer）+ 专用 Redis、GPT-Load / Codex2API / HaloWebUI 共用 Redis、OutlookMail Plus、Kiro、CLIProxyAPI、Grok2API，以及加密后的 `secret-sealed.yaml`。
+- `apps/ai-services/base`：AI 服务组，包括共享 PostgreSQL（`longhorn-fast-1replica`）、Metapi、Aether（Rust Pioneer）+ 专用 Redis、GPT-Load / Codex2API / HaloWebUI 共用 Redis、OutlookMail Plus、Kiro、CLIProxyAPI、Grok2API、Gemini Web2API，以及加密后的 `secret-sealed.yaml`。
 - `apps/inventree/base`：InvenTree 库存 / 出入库 / BOM 管理服务，包括 PostgreSQL、Redis、InvenTree server / worker、Caddy 静态与媒体代理，以及加密后的 `secret-sealed.yaml`。
 - `clusters/master-node`：当前单 Master 集群聚合入口。
 
