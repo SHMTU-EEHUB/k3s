@@ -16,5 +16,6 @@ resources:
   - gpt-load.yaml
   - codex2api.yaml
   - halowebui.yaml
+  - gemini-web2api.yaml
   - outlook-email.yaml
   - ingress.yaml
