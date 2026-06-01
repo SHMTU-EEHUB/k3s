@@ -91,19 +91,19 @@ spec:
               protocol: TCP
           env:
             - name: HTTP_PROXY
-              value: http://mihomo-clean-provider-1.default.svc.cluster.local:7896
+              value: http://mihomo-gpt-listener.default.svc.cluster.local:7910
             - name: HTTPS_PROXY
-              value: http://mihomo-clean-provider-1.default.svc.cluster.local:7896
+              value: http://mihomo-gpt-listener.default.svc.cluster.local:7910
             - name: ALL_PROXY
-              value: http://mihomo-clean-provider-1.default.svc.cluster.local:7896
+              value: http://mihomo-gpt-listener.default.svc.cluster.local:7910
             - name: NO_PROXY
               value: 127.0.0.1,localhost,.svc,.cluster.local,172.24.0.0/16,172.25.0.0/16
             - name: http_proxy
-              value: http://mihomo-clean-provider-1.default.svc.cluster.local:7896
+              value: http://mihomo-gpt-listener.default.svc.cluster.local:7910
             - name: https_proxy
-              value: http://mihomo-clean-provider-1.default.svc.cluster.local:7896
+              value: http://mihomo-gpt-listener.default.svc.cluster.local:7910
             - name: all_proxy
-              value: http://mihomo-clean-provider-1.default.svc.cluster.local:7896
+              value: http://mihomo-gpt-listener.default.svc.cluster.local:7910
             - name: no_proxy
               value: 127.0.0.1,localhost,.svc,.cluster.local,172.24.0.0/16,172.25.0.0/16
             - name: TZ

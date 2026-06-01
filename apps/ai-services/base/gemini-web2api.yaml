@@ -18,6 +18,34 @@ spec:
       port: 8081
       targetPort: 8081
 ---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: gemini-web2api-config
+  namespace: ai-services
+  labels:
+    app: gemini-web2api
+    app.kubernetes.io/name: gemini-web2api
+    app.kubernetes.io/component: gemini-gateway
+    app.kubernetes.io/part-of: eehub-ai-services
+data:
+  config.json: |
+    {
+      "host": "0.0.0.0",
+      "port": 8081,
+      "retry_attempts": 3,
+      "retry_delay_sec": 2,
+      "request_timeout_sec": 180,
+      "gemini_bl": "boq_assistant-bard-web-server_20260525.09_p0",
+      "auth_user": null,
+      "xsrf_token": null,
+      "default_model": "gemini-3.5-flash",
+      "api_keys": [],
+      "cookie_file": null,
+      "proxy": "http://mihomo-proxy-nodeport.default.svc.cluster.local:7897",
+      "log_requests": true
+    }
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -99,8 +127,8 @@ spec:
               readOnly: true
       volumes:
         - name: config
-          secret:
-            secretName: gemini-web2api-secret
+          configMap:
+            name: gemini-web2api-config
             items:
               - key: config.json
                 path: config.json
