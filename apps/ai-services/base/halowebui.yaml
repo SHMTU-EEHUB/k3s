@@ -126,7 +126,7 @@ spec:
               memory: 256Mi
       containers:
         - name: halowebui
-          image: ghcr.io/ztx888/halowebui:main@sha256:b412ab407bd89c5e204031f2d0f03b4a26fa99b1fd2b98043330b810f661b5fe
+          image: ghcr.io/ztx888/halowebui:main@sha256:6ac7ed58a17779f1feb7a8bc562b4546985ef478d3ea1a53ca083442b856939f
           imagePullPolicy: Always
           ports:
             - name: http

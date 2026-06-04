@@ -18,4 +18,6 @@ resources:
   - halowebui.yaml
   - gemini-web2api.yaml
   - outlook-email.yaml
+  - copilot-api.yaml
+  - notion2api.yaml
   - ingress.yaml

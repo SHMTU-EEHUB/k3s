@@ -1,0 +1,117 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: notion2api
+  namespace: ai-services
+  labels:
+    app.kubernetes.io/name: notion2api
+    app.kubernetes.io/part-of: eehub-ai-services
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: notion2api
+    app.kubernetes.io/part-of: eehub-ai-services
+  ports:
+    - name: http
+      port: 8787
+      targetPort: http
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: notion2api-data
+  namespace: ai-services
+  labels:
+    app.kubernetes.io/name: notion2api
+    app.kubernetes.io/part-of: eehub-ai-services
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: longhorn-hdd-1replica
+  resources:
+    requests:
+      storage: 5Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: notion2api
+  namespace: ai-services
+  labels:
+    app.kubernetes.io/name: notion2api
+    app.kubernetes.io/part-of: eehub-ai-services
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: notion2api
+      app.kubernetes.io/part-of: eehub-ai-services
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: notion2api
+        app.kubernetes.io/part-of: eehub-ai-services
+    spec:
+      automountServiceAccountToken: false
+      containers:
+        - name: notion2api
+          image: ghcr.io/galiais/notion2api:v1.0.8@sha256:7aceac16c33689ed0801b4e8798786b36a3f0ba76b14c1550e5e8c0b6ee39723
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8787
+          env:
+            - name: TZ
+              value: Asia/Shanghai
+            - name: NOTION2API_CONFIG_PATH
+              value: /app/data/config.json
+            - name: N2A_PROXY_MODE
+              value: env
+            - name: HTTP_PROXY
+              value: http://mihomo-proxy-nodeport.default.svc.cluster.local:7897
+            - name: HTTPS_PROXY
+              value: http://mihomo-proxy-nodeport.default.svc.cluster.local:7897
+            - name: ALL_PROXY
+              value: http://mihomo-proxy-nodeport.default.svc.cluster.local:7897
+            - name: http_proxy
+              value: http://mihomo-proxy-nodeport.default.svc.cluster.local:7897
+            - name: https_proxy
+              value: http://mihomo-proxy-nodeport.default.svc.cluster.local:7897
+            - name: all_proxy
+              value: http://mihomo-proxy-nodeport.default.svc.cluster.local:7897
+            - name: NO_PROXY
+              value: 127.0.0.1,localhost,.svc,.cluster.local,10.42.0.0/16,10.43.0.0/16,172.24.0.0/16,172.25.0.0/16
+            - name: no_proxy
+              value: 127.0.0.1,localhost,.svc,.cluster.local,10.42.0.0/16,10.43.0.0/16,172.24.0.0/16,172.25.0.0/16
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 6
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          volumeMounts:
+            - name: notion2api-data
+              mountPath: /app/data
+      volumes:
+        - name: notion2api-data
+          persistentVolumeClaim:
+            claimName: notion2api-data

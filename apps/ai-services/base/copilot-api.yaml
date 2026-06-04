@@ -1,0 +1,117 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: copilot-api
+  namespace: ai-services
+  labels:
+    app.kubernetes.io/name: copilot-api
+    app.kubernetes.io/part-of: eehub-ai-services
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: copilot-api
+    app.kubernetes.io/part-of: eehub-ai-services
+  ports:
+    - name: http
+      port: 4141
+      targetPort: http
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: copilot-api-data
+  namespace: ai-services
+  labels:
+    app.kubernetes.io/name: copilot-api
+    app.kubernetes.io/part-of: eehub-ai-services
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: longhorn-hdd-1replica
+  resources:
+    requests:
+      storage: 5Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: copilot-api
+  namespace: ai-services
+  labels:
+    app.kubernetes.io/name: copilot-api
+    app.kubernetes.io/part-of: eehub-ai-services
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: copilot-api
+      app.kubernetes.io/part-of: eehub-ai-services
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: copilot-api
+        app.kubernetes.io/part-of: eehub-ai-services
+    spec:
+      automountServiceAccountToken: false
+      containers:
+        - name: copilot-api
+          image: ghcr.io/qlhazycoder/copilot-api:5.0.0@sha256:c5c998a55ab2440341e8217d4e9f5e97e52f23c943e990d51516065b262b9a39
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 4141
+          env:
+            - name: TZ
+              value: Asia/Shanghai
+            - name: PORT
+              value: "4141"
+            - name: PROXY_ENV
+              value: "true"
+            - name: HTTP_PROXY
+              value: http://mihomo-proxy-nodeport.default.svc.cluster.local:7897
+            - name: HTTPS_PROXY
+              value: http://mihomo-proxy-nodeport.default.svc.cluster.local:7897
+            - name: ALL_PROXY
+              value: http://mihomo-proxy-nodeport.default.svc.cluster.local:7897
+            - name: http_proxy
+              value: http://mihomo-proxy-nodeport.default.svc.cluster.local:7897
+            - name: https_proxy
+              value: http://mihomo-proxy-nodeport.default.svc.cluster.local:7897
+            - name: all_proxy
+              value: http://mihomo-proxy-nodeport.default.svc.cluster.local:7897
+            - name: NO_PROXY
+              value: 127.0.0.1,localhost,.svc,.cluster.local,10.42.0.0/16,10.43.0.0/16,172.24.0.0/16,172.25.0.0/16
+            - name: no_proxy
+              value: 127.0.0.1,localhost,.svc,.cluster.local,10.42.0.0/16,10.43.0.0/16,172.24.0.0/16,172.25.0.0/16
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 6
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 1Gi
+          volumeMounts:
+            - name: copilot-api-data
+              mountPath: /data
+      volumes:
+        - name: copilot-api-data
+          persistentVolumeClaim:
+            claimName: copilot-api-data
