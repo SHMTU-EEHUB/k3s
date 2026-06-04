@@ -59,6 +59,10 @@ spec:
         - name: notion2api
           image: ghcr.io/galiais/notion2api:v1.0.8@sha256:7aceac16c33689ed0801b4e8798786b36a3f0ba76b14c1550e5e8c0b6ee39723
           imagePullPolicy: IfNotPresent
+          args:
+            - ./notion2api
+            - --config
+            - /app/data/config.json
           ports:
             - name: http
               containerPort: 8787
