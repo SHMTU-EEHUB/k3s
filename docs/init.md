@@ -220,7 +220,7 @@
 
 1. 准备私有 Mihomo 配置，生成 `Secret/mihomo-config`。
 2. 在无法直接拉取镜像时，可临时借用可信局域网代理完成 Bootstrap，但临时代理地址不得写入仓库。
-3. 拉取或预热 `metacubex/mihomo:latest` 镜像。
+3. 拉取或预热 `metacubex/mihomo:v1.19.27` 镜像。
 4. 部署 GitOps 资源：`Secret/mihomo-config`、`PersistentVolumeClaim/mihomo-runtime`、`clash-proxy` 与 `Deployment/mihomo`。
 5. `mihomo-runtime` 持久化 `/root/.config/mihomo` 运行时文件，如 providers、rules、cache、geodata；私有配置仍由 Secret 提供。
 6. 按 `docs/machines.md` 的当前形态部署代理 ClusterIP、控制器 API NodePort 和 Web UI NodePort。

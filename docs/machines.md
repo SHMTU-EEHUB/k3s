@@ -153,7 +153,7 @@
 | 代理副本数         | 1                                                                     |
 | Web UI Workload    | `Deployment`：`metacubexd-ui`                                         |
 | 命名空间           | `default`                                                             |
-| 容器镜像           | `metacubex/mihomo:latest`                                             |
+| 容器镜像           | `metacubex/mihomo:v1.19.27`                                             |
 | 镜像拉取策略       | `IfNotPresent`                                                        |
 | Linux capabilities | `NET_ADMIN`、`NET_RAW`                                                |
 | 设备挂载           | `/dev/net/tun`                                                        |

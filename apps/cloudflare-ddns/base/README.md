@@ -16,7 +16,7 @@ Cloudflare 私有材料已改为 SealedSecret 管理：
 
 - 命名空间：`default`
 - Workload：`Deployment/cloudflare-ddns`
-- 镜像：`favonia/cloudflare-ddns:latest`
+- 镜像：`favonia/cloudflare-ddns:1.16.2`
 - 副本数：`1`
 - 调度：固定到控制平面节点
 - 更新周期：`@every 5m`

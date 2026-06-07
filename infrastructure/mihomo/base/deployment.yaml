@@ -28,7 +28,7 @@ spec:
       automountServiceAccountToken: false
       containers:
         - name: mihomo
-          image: metacubex/mihomo:latest
+          image: metacubex/mihomo:v1.19.27
           imagePullPolicy: IfNotPresent
           securityContext:
             capabilities:
@@ -91,7 +91,7 @@ spec:
       automountServiceAccountToken: false
       containers:
         - name: metacubexd
-          image: ghcr.io/metacubex/metacubexd:latest
+          image: ghcr.io/metacubex/metacubexd:v1.251.3
           imagePullPolicy: Always
           ports:
             - name: http

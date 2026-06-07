@@ -6,7 +6,7 @@
 
 - `StatefulSet/inventree-postgresql`：InvenTree PostgreSQL 17，当前使用 `longhorn-fast-1replica`。
 - `Deployment/inventree-redis`：Redis 缓存 / 后台任务队列，当前使用 `longhorn-hdd-1replica`。
-- `Deployment/inventree-server`：InvenTree Web / API 服务，镜像 `inventree/inventree:stable`。
+- `Deployment/inventree-server`：InvenTree Web / API 服务，镜像 `inventree/inventree:1.3.3`。
 - `Deployment/inventree-worker`：InvenTree 后台 worker，命令 `invoke worker`。
 - `Deployment/inventree-proxy`：Caddy 代理，负责 `/static` 与 `/media` 文件服务，其余请求反代到 `inventree-server`。
 - `Ingress/inventree-web`：`https://inventory.eehub.mingz.top`，通过 Traefik + cert-manager 暴露。
