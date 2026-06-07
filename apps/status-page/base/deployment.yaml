@@ -1,0 +1,78 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gatus
+  namespace: status-page
+  labels:
+    app: gatus
+    app.kubernetes.io/name: gatus
+    app.kubernetes.io/component: status-page
+    app.kubernetes.io/part-of: eehub-status-page
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gatus
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      annotations:
+        eehub.mingz.top/gatus-config-revision: status-page-v2
+      labels:
+        app: gatus
+        app.kubernetes.io/name: gatus
+        app.kubernetes.io/component: status-page
+        app.kubernetes.io/part-of: eehub-status-page
+    spec:
+      securityContext:
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
+      automountServiceAccountToken: false
+      containers:
+        - name: gatus
+          image: ghcr.io/twin/gatus:stable
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          env:
+            - name: GATUS_CONFIG_PATH
+              value: /config/config.yaml
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 250m
+              memory: 256Mi
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 6
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 20
+            timeoutSeconds: 5
+            failureThreshold: 6
+          volumeMounts:
+            - name: config
+              mountPath: /config
+              readOnly: true
+            - name: data
+              mountPath: /data
+      volumes:
+        - name: config
+          configMap:
+            name: gatus-config
+        - name: data
+          persistentVolumeClaim:
+            claimName: gatus-data

@@ -12,6 +12,7 @@
 - `../../infrastructure/mihomo/base`
 - `../../apps/cloudflare-ddns/base`
 - `../../apps/ai-services/base`
+- `../../apps/status-page/base`
 - `../../apps/inventree/base`
 
 Sealed Secrets Controller 由 Helm 管理，配置见 `../../infrastructure/sealed-secrets/base`。Controller 必须先于本目录中的 SealedSecret 资源安装。

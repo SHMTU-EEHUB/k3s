@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: gatus-data
+  namespace: status-page
+  labels:
+    app.kubernetes.io/name: gatus
+    app.kubernetes.io/component: status-page
+    app.kubernetes.io/part-of: eehub-status-page
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: longhorn-hdd-1replica
+  resources:
+    requests:
+      storage: 1Gi

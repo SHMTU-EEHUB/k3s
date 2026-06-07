@@ -1,0 +1,190 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: gatus-config
+  namespace: status-page
+  labels:
+    app.kubernetes.io/name: gatus
+    app.kubernetes.io/component: config
+    app.kubernetes.io/part-of: eehub-status-page
+data:
+  config.yaml: |
+    storage:
+      type: sqlite
+      path: /data/gatus.db
+      caching: true
+
+    web:
+      port: 8080
+
+    ui:
+      default-sort-by: group
+
+    endpoints:
+      - name: mihomo-default
+        group: proxy
+        url: https://www.gstatic.com/generate_204
+        interval: 1m
+        client:
+          timeout: 10s
+          proxy-url: http://mihomo-proxy-nodeport.default.svc.cluster.local:7897
+        conditions:
+          - "[STATUS] == 204"
+      - name: gpt-node
+        group: proxy
+        url: https://www.gstatic.com/generate_204
+        interval: 1m
+        client:
+          timeout: 10s
+          proxy-url: http://mihomo-gpt-listener.default.svc.cluster.local:7910
+        conditions:
+          - "[STATUS] == 204"
+      - name: us-node
+        group: proxy
+        url: https://www.gstatic.com/generate_204
+        interval: 1m
+        client:
+          timeout: 10s
+          proxy-url: http://mihomo-us-listener.default.svc.cluster.local:7911
+        conditions:
+          - "[STATUS] == 204"
+      - name: jp-node
+        group: proxy
+        url: https://www.gstatic.com/generate_204
+        interval: 1m
+        client:
+          timeout: 10s
+          proxy-url: http://mihomo-jp-listener.default.svc.cluster.local:7912
+        conditions:
+          - "[STATUS] == 204"
+
+      - name: ai-postgresql
+        group: ai-services
+        url: tcp://ai-postgresql.ai-services.svc.cluster.local:5432
+        interval: 1m
+        client:
+          timeout: 10s
+        conditions:
+          - "[CONNECTED] == true"
+      - name: aether-redis
+        group: ai-services
+        url: tcp://aether-redis.ai-services.svc.cluster.local:6379
+        interval: 1m
+        client:
+          timeout: 10s
+        conditions:
+          - "[CONNECTED] == true"
+      - name: ai-services-redis
+        group: ai-services
+        url: tcp://ai-services-redis.ai-services.svc.cluster.local:6379
+        interval: 1m
+        client:
+          timeout: 10s
+        conditions:
+          - "[CONNECTED] == true"
+      - name: aether
+        group: ai-services
+        url: http://aether.ai-services.svc.cluster.local:8084/health
+        interval: 1m
+        client:
+          timeout: 10s
+        conditions:
+          - "[STATUS] >= 200"
+          - "[STATUS] < 400"
+      - name: metapi
+        group: ai-services
+        url: http://metapi.ai-services.svc.cluster.local:4000/
+        interval: 1m
+        client:
+          timeout: 10s
+        conditions:
+          - "[STATUS] >= 200"
+          - "[STATUS] < 400"
+      - name: kiro-rs
+        group: ai-services
+        url: tcp://kiro-rs.ai-services.svc.cluster.local:8990
+        interval: 1m
+        client:
+          timeout: 10s
+        conditions:
+          - "[CONNECTED] == true"
+      - name: cli-proxy-api
+        group: ai-services
+        url: tcp://cli-proxy-api.ai-services.svc.cluster.local:8317
+        interval: 1m
+        client:
+          timeout: 10s
+        conditions:
+          - "[CONNECTED] == true"
+      - name: grok2api
+        group: ai-services
+        url: http://grok2api.ai-services.svc.cluster.local:8000/health
+        interval: 1m
+        client:
+          timeout: 10s
+        conditions:
+          - "[STATUS] >= 200"
+          - "[STATUS] < 400"
+      - name: gpt-load
+        group: ai-services
+        url: http://gpt-load.ai-services.svc.cluster.local:3001/health
+        interval: 1m
+        client:
+          timeout: 10s
+        conditions:
+          - "[STATUS] >= 200"
+          - "[STATUS] < 400"
+      - name: codex2api
+        group: ai-services
+        url: http://codex2api.ai-services.svc.cluster.local:8080/health
+        interval: 1m
+        client:
+          timeout: 10s
+        conditions:
+          - "[STATUS] >= 200"
+          - "[STATUS] < 400"
+      - name: halowebui
+        group: ai-services
+        url: http://halowebui.ai-services.svc.cluster.local:8080/health
+        interval: 1m
+        client:
+          timeout: 10s
+        conditions:
+          - "[STATUS] >= 200"
+          - "[STATUS] < 400"
+      - name: gemini-web2api
+        group: ai-services
+        url: http://gemini-web2api.ai-services.svc.cluster.local:8081/
+        interval: 1m
+        client:
+          timeout: 10s
+        conditions:
+          - "[STATUS] >= 200"
+          - "[STATUS] < 400"
+      - name: outlook-email
+        group: ai-services
+        url: http://outlook-email.ai-services.svc.cluster.local:5000/healthz
+        interval: 1m
+        client:
+          timeout: 10s
+        conditions:
+          - "[STATUS] >= 200"
+          - "[STATUS] < 400"
+      - name: copilot-api
+        group: ai-services
+        url: http://copilot-api.ai-services.svc.cluster.local:4141/
+        interval: 1m
+        client:
+          timeout: 10s
+        conditions:
+          - "[STATUS] >= 200"
+          - "[STATUS] < 400"
+      - name: notion2api
+        group: ai-services
+        url: http://notion2api.ai-services.svc.cluster.local:8787/healthz
+        interval: 1m
+        client:
+          timeout: 10s
+        conditions:
+          - "[STATUS] >= 200"
+          - "[STATUS] < 400"
