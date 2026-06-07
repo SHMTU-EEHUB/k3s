@@ -24,7 +24,7 @@ data:
       - name: mihomo-default
         group: proxy
         url: https://www.gstatic.com/generate_204
-        interval: 1m
+        interval: 5m
         client:
           timeout: 10s
           proxy-url: http://mihomo-proxy-nodeport.default.svc.cluster.local:7897
@@ -33,7 +33,7 @@ data:
       - name: gpt-node
         group: proxy
         url: https://www.gstatic.com/generate_204
-        interval: 1m
+        interval: 5m
         client:
           timeout: 10s
           proxy-url: http://mihomo-gpt-listener.default.svc.cluster.local:7910
@@ -42,7 +42,7 @@ data:
       - name: us-node
         group: proxy
         url: https://www.gstatic.com/generate_204
-        interval: 1m
+        interval: 5m
         client:
           timeout: 10s
           proxy-url: http://mihomo-us-listener.default.svc.cluster.local:7911
@@ -51,12 +51,21 @@ data:
       - name: jp-node
         group: proxy
         url: https://www.gstatic.com/generate_204
-        interval: 1m
+        interval: 5m
         client:
           timeout: 10s
           proxy-url: http://mihomo-jp-listener.default.svc.cluster.local:7912
         conditions:
           - "[STATUS] == 204"
+
+      - name: mihomo-pod
+        group: proxy
+        url: tcp://mihomo-api-ui.default.svc.cluster.local:9097
+        interval: 1m
+        client:
+          timeout: 5s
+        conditions:
+          - "[CONNECTED] == true"
 
       - name: ai-postgresql
         group: ai-services

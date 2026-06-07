@@ -4,7 +4,7 @@
 
 ## 分组
 
-- `proxy`：通过 `https://www.gstatic.com/generate_204` 验证 Mihomo 默认、GPT、US、JP 四个显式代理出口，预期 HTTP 状态码为 `204`。
+- `proxy`：通过 `https://www.gstatic.com/generate_204` 验证 Mihomo 默认、GPT、US、JP 四个显式代理出口，预期 HTTP 状态码为 `204`；同时通过 `mihomo-api-ui:9097` TCP 检查 Mihomo Pod / Service 是否可连通。
 - `ai-services`：覆盖 `apps/ai-services/base` 中已有 Service。PostgreSQL、Redis、Kiro RS、CLIProxyAPI 使用 TCP 连通性检查；其余 HTTP 服务使用现有 readiness / liveness 路径。
 
 ## 访问入口
@@ -22,6 +22,8 @@ Gatus 使用 SQLite，数据库路径为 `/data/gatus.db`，由 `PersistentVolum
 Deployment 设置了 `fsGroup: 1000`，用于确保 Gatus 进程可以写入 Longhorn 挂载的 `/data` 目录。后续修改 `ConfigMap/gatus-config` 时，同时递增 Pod template annotation `eehub.mingz.top/gatus-config-revision`，让 ArgoCD 同步后触发 Pod 重建并加载新配置。
 
 UI 默认按 `group` 排序，便于直接看到 `proxy` 和 `ai-services` 两个分组。
+
+Mihomo 外部代理出口探测间隔为 `5m`，避免一直通过节点高频访问外网；Mihomo Pod / Service 自身 TCP 存活检查仍为 `1m`，且不走代理、不产生外部流量。
 
 ## 验证
 

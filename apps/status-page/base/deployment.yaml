@@ -18,7 +18,7 @@ spec:
   template:
     metadata:
       annotations:
-        eehub.mingz.top/gatus-config-revision: status-page-v2
+        eehub.mingz.top/gatus-config-revision: status-page-v3
       labels:
         app: gatus
         app.kubernetes.io/name: gatus
