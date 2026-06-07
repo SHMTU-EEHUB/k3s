@@ -140,21 +140,25 @@
 
 ### 9.1 Kubernetes 资源形态
 
-| 项目               | 当前配置                            |
-| ------------------ | ----------------------------------- |
-| 配置资源           | `ConfigMap`：`clash-config`         |
-| 集群内代理 Service | `clash-proxy`                       |
-| Service 类型       | Headless Service，`clusterIP: None` |
-| 代理 Workload      | `Deployment`：`mihomo`              |
-| 代理副本数         | 1                                   |
-| Web UI Workload    | `Deployment`：`metacubexd-ui`       |
-| 命名空间           | `default`                           |
-| 容器镜像           | `metacubex/mihomo:latest`           |
-| 镜像拉取策略       | `IfNotPresent`                      |
-| Linux capabilities | `NET_ADMIN`、`NET_RAW`              |
-| 设备挂载           | `/dev/net/tun`                      |
-| 资源 requests      | 128Mi 内存、100m CPU                |
-| 资源 limits        | 256Mi 内存、200m CPU                |
+| 项目               | 当前配置                                                              |
+| ------------------ | --------------------------------------------------------------------- |
+| 配置 Secret        | `mihomo-config`                                                       |
+| 配置挂载           | `/root/.config/mihomo/config.yaml`，`subPath: config.yaml`，只读       |
+| 运行数据 PVC       | `mihomo-runtime`                                                      |
+| PVC 规格           | `longhorn-hdd-1replica`，`ReadWriteOnce`，`2Gi`                       |
+| 运行数据挂载路径   | `/root/.config/mihomo`                                                |
+| 集群内代理 Service | `clash-proxy`                                                         |
+| Service 类型       | Headless Service，`clusterIP: None`                                   |
+| 代理 Workload      | `Deployment`：`mihomo`                                                |
+| 代理副本数         | 1                                                                     |
+| Web UI Workload    | `Deployment`：`metacubexd-ui`                                         |
+| 命名空间           | `default`                                                             |
+| 容器镜像           | `metacubex/mihomo:latest`                                             |
+| 镜像拉取策略       | `IfNotPresent`                                                        |
+| Linux capabilities | `NET_ADMIN`、`NET_RAW`                                                |
+| 设备挂载           | `/dev/net/tun`                                                        |
+| 资源 requests      | 128Mi 内存、100m CPU                                                  |
+| 资源 limits        | 256Mi 内存、200m CPU                                                  |
 
 ### 9.2 暴露端口与 Service
 

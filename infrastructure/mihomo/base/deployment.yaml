@@ -14,7 +14,7 @@ spec:
     matchLabels:
       app: mihomo
   strategy:
-    type: RollingUpdate
+    type: Recreate
   template:
     metadata:
       annotations:
@@ -43,12 +43,18 @@ spec:
               cpu: 200m
               memory: 256Mi
           volumeMounts:
+            - name: runtime-data
+              mountPath: /root/.config/mihomo
             - name: config-volume
               mountPath: /root/.config/mihomo/config.yaml
               subPath: config.yaml
+              readOnly: true
             - name: tun-device
               mountPath: /dev/net/tun
       volumes:
+        - name: runtime-data
+          persistentVolumeClaim:
+            claimName: mihomo-runtime
         - name: config-volume
           secret:
             secretName: mihomo-config

@@ -15,10 +15,26 @@ Mihomo 管理面保留两个 NodePort：`mihomo-api-ui` 控制器 API `30910`，
 
 `configmap.example.yaml` 与 `config.private.example.yaml` 只作为本地生成 / 维护示例，不参与 `kustomization.yaml`。
 
+## 持久化边界
+
+Mihomo 配置与运行时数据分开管理：
+
+- 配置文件仍由 `Secret/mihomo-config` 提供，`config.yaml` 通过 `subPath: config.yaml` 只读挂载到 `/root/.config/mihomo/config.yaml`。
+- 运行时目录由 `PersistentVolumeClaim/mihomo-runtime` 持久化，命名空间为 `default`。
+- PVC 使用 `storageClassName: longhorn-hdd-1replica`，访问模式为 `ReadWriteOnce`，容量为 `2Gi`。
+- PVC 挂载到 `/root/.config/mihomo`，保存 Mihomo 自动下载或生成的运行文件。
+- 持久化范围包括 `proxy_provider/`、`rule_provider/`、`cache.db`、`geoip.dat`、`geoip.metadb`、`geosite.dat`，以及其它下载得到的 `.mrs` / `.mmdb` geodata 与缓存文件。
+
+GitOps 通过 `infrastructure/mihomo/base/kustomization.yaml` 应用该 PVC 与挂载关系。不要把 provider、规则缓存、geodata 或其它运行缓存手工复制进 Git。
+
+首次按该变更滚动后，`mihomo-runtime` 会是空 PVC，除非在 GitOps 之外手工迁移旧数据。Mihomo 应能重新下载或生成 provider、规则、缓存与 geodata 文件。
+
 ## 当前运行口径
 
 - 命名空间：`default`
 - Workload：`Deployment/mihomo`，`Deployment/metacubexd-ui`
+- 配置 Secret：`mihomo-config`，只读挂载 `config.yaml`。
+- 运行数据 PVC：`mihomo-runtime`，Longhorn HDD 单副本，挂载到 `/root/.config/mihomo`。
 - Mixed 代理：`mihomo-proxy-nodeport`，ClusterIP Service，端口 `7897`，仅供集群内显式代理使用。
 - Clean 节点专用代理：`mihomo-clean-provider-1`，ClusterIP Service，Mihomo 监听 `7896`。
 - TUN 透明网关：Mihomo Pod 挂载 `/dev/net/tun`，用于路由注入 fallback 场景。

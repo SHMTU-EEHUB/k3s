@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mihomo-runtime
+  namespace: default
+  labels:
+    app.kubernetes.io/name: mihomo
+    app.kubernetes.io/component: proxy-gateway
+    app.kubernetes.io/part-of: eehub-infra
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: longhorn-hdd-1replica
+  resources:
+    requests:
+      storage: 2Gi

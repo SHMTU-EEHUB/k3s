@@ -218,16 +218,17 @@
 
 部署步骤：
 
-1. 准备私有 Mihomo 配置与 Secret。
+1. 准备私有 Mihomo 配置，生成 `Secret/mihomo-config`。
 2. 在无法直接拉取镜像时，可临时借用可信局域网代理完成 Bootstrap，但临时代理地址不得写入仓库。
 3. 拉取或预热 `metacubex/mihomo:latest` 镜像。
-4. 部署 `clash-config`、`clash-proxy` 与 `mihomo`。
-5. 按 `docs/machines.md` 的当前形态部署代理 ClusterIP、控制器 API NodePort 和 Web UI NodePort。
-6. 确认 `clash-proxy` Endpoints 指向 Mihomo Pod。
-7. 验证 Mixed、SOCKS、HTTP、控制器 API 和 Web UI 端口与 `docs/machines.md` 一致。
-8. 清理临时 Bootstrap 代理配置。
-9. 如需让宿主机 / Worker 拉镜像走代理，需另行配置受控入口；默认不再暴露 Mihomo Mixed 代理 NodePort。
-10. 为需要代理的业务配置显式代理环境变量或路由注入。
+4. 部署 GitOps 资源：`Secret/mihomo-config`、`PersistentVolumeClaim/mihomo-runtime`、`clash-proxy` 与 `Deployment/mihomo`。
+5. `mihomo-runtime` 持久化 `/root/.config/mihomo` 运行时文件，如 providers、rules、cache、geodata；私有配置仍由 Secret 提供。
+6. 按 `docs/machines.md` 的当前形态部署代理 ClusterIP、控制器 API NodePort 和 Web UI NodePort。
+7. 确认 `clash-proxy` Endpoints 指向 Mihomo Pod。
+8. 验证 Mixed、SOCKS、HTTP、控制器 API 和 Web UI 端口与 `docs/machines.md` 一致。
+9. 清理临时 Bootstrap 代理配置。
+10. 如需让宿主机 / Worker 拉镜像走代理，需另行配置受控入口；默认不再暴露 Mihomo Mixed 代理 NodePort。
+11. 为需要代理的业务配置显式代理环境变量或路由注入。
 
 验收：
 
@@ -295,11 +296,12 @@
 
 恢复顺序：
 
-1. 恢复私有配置和 Secret。
-2. 重新部署 `clash-config`、`clash-proxy` 与 `mihomo`。
-3. 验证 Service、Endpoints、端口和控制器密钥。
-4. 验证需要代理的测试 Pod 出口。
-5. 验证普通 Pod 不受代理影响。
+1. 恢复私有配置，生成 `Secret/mihomo-config`。
+2. 重新部署 GitOps 资源：`Secret/mihomo-config`、`PersistentVolumeClaim/mihomo-runtime`、`clash-proxy` 与 `Deployment/mihomo`。
+3. 如没有 Longhorn 备份，`mihomo-runtime` PVC 可从空卷启动，Mihomo 会重新下载或生成 providers、cache、geodata 等运行时文件。
+4. 验证 Service、Endpoints、端口和控制器密钥。
+5. 验证需要代理的测试 Pod 出口。
+6. 验证普通 Pod 不受代理影响。
 
 ## 5. 最终验收清单
 

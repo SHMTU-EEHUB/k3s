@@ -16,7 +16,7 @@
 - `clusters/master-node/authentik-app.yaml`：ArgoCD child Application，接管 Authentik Helm release。
 - `infrastructure/cert-manager/base`：cert-manager 的 Helm values、Cloudflare DNS-01 所需的加密 Secret，以及 Let’s Encrypt ClusterIssuer（由 root Kustomize / ArgoCD 同步）。
 - `infrastructure/authentik/base`：Authentik 的命名空间、Helm values、加密后的 `authentik-config`（由 root Kustomize / ArgoCD 同步）。
-- `infrastructure/mihomo/base`：Mihomo 网关、MetaCubeXD UI、控制器 / Web UI NodePort、ClusterIP / Headless Service、加密后的 `mihomo-config`。
+- `infrastructure/mihomo/base`：Mihomo 网关、MetaCubeXD UI、控制器 / Web UI NodePort、ClusterIP / Headless Service、加密后的 `mihomo-config`，以及运行数据 PVC `mihomo-runtime`。
 - `infrastructure/longhorn/base`：Longhorn StorageClass、单节点副本设置、`master1` 磁盘声明，以及系统 SSD 先纳入 `fast` 层、后迁 worker SSD 的策略。
 
 - `apps/cloudflare-ddns/base`：Cloudflare DDNS ConfigMap、Deployment、加密后的 `cloudflare-ddns-secret`。
