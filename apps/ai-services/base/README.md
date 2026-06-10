@@ -19,6 +19,7 @@
 - `Deployment/outlook-email`：OutlookMail Plus 邮箱管理台，默认仅内部访问，走 Mihomo 默认节点，使用本地 SQLite。
 - `Deployment/copilot-api`：GitHub Copilot 转 OpenAI / Anthropic / Gemini 兼容 API，默认仅内部访问，走 Mihomo 默认节点，使用本地数据目录保存管理配置。
 - `Deployment/notion2api`：Notion AI 转 OpenAI 兼容 API，默认仅内部访问，走 Mihomo 默认节点，使用本地 SQLite 与账号目录。
+- `Deployment/wa-app`：WhatsApp 账号管理与 gRPC 服务，默认仅内部访问，走 Mihomo GPT 专用节点，使用本地 SQLite 数据目录。
 
 ## 敏感信息
 
@@ -42,7 +43,7 @@
 - `halowebui-secret`
 - `outlook-email-secret`
 
-`copilot-api` 与 `notion2api` 当前不新增提交到仓库的 Secret；首次配置通过 `kubectl port-forward` 访问内部服务完成。管理密码、API Key、Copilot / Notion 账号 Cookie、Token 与 Refresh Token 均不得以明文提交。
+`copilot-api`、`notion2api` 与 `wa-app` 当前不新增提交到仓库的 Secret；首次配置通过 `kubectl port-forward` 访问内部服务完成。管理密码、API Key、Copilot / Notion / WhatsApp 账号 Cookie、Token 与 Refresh Token 均不得以明文提交。
 
 ## Gemini Web2API 访问
 
@@ -64,6 +65,7 @@
   - `gemini-web2api`：仅内部访问，`Service/gemini-web2api:8081` 保持 ClusterIP，无 Ingress / NodePort。
   - `copilot-api`：仅内部访问，`Service/copilot-api:4141` 保持 ClusterIP，无 Ingress / NodePort；首次管理初始化建议使用 `kubectl -n ai-services port-forward svc/copilot-api 4141:4141` 后访问 `http://127.0.0.1:4141/admin`。
   - `notion2api`：仅内部访问，`Service/notion2api:8787` 保持 ClusterIP，无 Ingress / NodePort；首次管理初始化建议使用 `kubectl -n ai-services port-forward svc/notion2api 8787:8787` 后访问 `http://127.0.0.1:8787/admin`。
+  - `wa-app`：仅内部访问，`Service/wa-app:8080` 提供 Dashboard，`Service/wa-app-grpc:50091` 提供 gRPC，无 Ingress / NodePort；首次使用建议 `kubectl -n ai-services port-forward svc/wa-app 8080:8080` 后访问 `http://127.0.0.1:8080`。
 - 出站代理：
   - `aether`：默认 Mihomo 节点 `7897`
   - `metapi`：默认 Mihomo 节点 `7897`
@@ -77,6 +79,7 @@
   - `outlook-email`：默认 Mihomo 节点 `7897`
   - `copilot-api`：默认 Mihomo 节点 `7897`，并通过 `PROXY_ENV=true` 读取标准代理环境变量。
   - `notion2api`：默认 Mihomo 节点 `7897`，并通过 `N2A_PROXY_MODE=env` 读取标准代理环境变量。
+  - `wa-app`：GPT Mihomo 节点 `mihomo-gpt-listener:7910`，同时设置 `WA_COMMON_PROXY` 与标准代理环境变量。
 - 数据持久化：
   - PostgreSQL：`20Gi`，`longhorn-fast-1replica`
   - Aether Redis 数据 PVC：`2Gi`，`longhorn-hdd-1replica`
@@ -91,19 +94,20 @@
   - OutlookMail Plus 数据 PVC：`5Gi`，`longhorn-hdd-1replica`
   - Copilot API 数据 PVC：`5Gi`，`longhorn-hdd-1replica`
   - Notion2API 数据 PVC：`5Gi`，`longhorn-hdd-1replica`
+  - WA App 数据 PVC：`5Gi`，`longhorn-hdd-1replica`
 
 ## 初始化说明
 
 - PostgreSQL 首次在空数据目录启动时，会执行 `ConfigMap/ai-postgresql-init` 中的脚本，创建 `metapi` 数据库和对应用户。
-- `metapi` 额外挂载 `/app/data`，用于保留本地运行数据与非数据库文件状态。
+- `metapi` 当前固定使用 `1467078763/metapi:sha-c308a3e@sha256:d29e74b18ce0734555c2088f1f6638e301a7fc01873ff979961ff8a1ac618da8`，额外挂载 `/app/data`，用于保留本地运行数据与非数据库文件状态。
 - `aether` 额外使用 initContainer 幂等创建 / 修正 `aether` 数据库与用户，兼容当前已运行的共享 PostgreSQL。
 - `aether` 当前固定使用上游 `ghcr.io/fawney19/aether:0.7.8@sha256:6fbafc539b3429c4bcb5bf268e2662287bdbc1feb51b7859f3ec9c4b04e15577`，对应 Rust Pioneer 路线的正式版本。
-- `kiro-rs` 通过 initContainer 将 `config.json` 与初始 `credentials.json` 复制到可写 PVC，避免 Token 刷新后无法回写；当前代理指向 `http://mihomo-gpt-listener.default.svc.cluster.local:7910`。
-- `cli-proxy-api` 通过 initContainer 将 `config.yaml` 复制到 PVC，并初始化持久化 `auths` 目录；当前固定使用 `eceasy/cli-proxy-api:v7.1.47@sha256:539d4f513622bd6ddacb910b6ccfb03d7bf9bc8931e90646782129fdf10a4ab1`。
-- `grok2api` 通过 initContainer 首次将 Secret 中的 `config.toml` 复制到 PVC；后续运行时配置、SQLite 账号库与日志都保存在同一个持久化卷中。
+- `kiro-rs` 当前固定使用 `ghcr.io/hank9999/kiro-rs:v2026.3.1@sha256:b9d89803f7ff1d74501fdf3bc843540935d3417a3c2baf1848fc15aff7ef3268`，通过 initContainer 将 `config.json` 与初始 `credentials.json` 复制到可写 PVC，避免 Token 刷新后无法回写；当前代理指向 `http://mihomo-gpt-listener.default.svc.cluster.local:7910`。
+- `cli-proxy-api` 通过 initContainer 将 `config.yaml` 复制到 PVC，并初始化持久化 `auths` 目录；当前固定使用 `eceasy/cli-proxy-api:v7.1.62@sha256:3d4625bbf4fa629819f912b78e99aa194a506c997a1fde021c821a1dd53492de`。
+- `grok2api` 当前固定使用 `ghcr.io/chenyme/grok2api:v2.0.4.rc4@sha256:e35ea179cc830e2a7c88918b263c6cbcfac9c179ca0c26e949615e7968427b08`，通过 initContainer 首次将 Secret 中的 `config.toml` 复制到 PVC；后续运行时配置、SQLite 账号库与日志都保存在同一个持久化卷中。
 - 如需强制刷新 `grok2api` 的初始配置，需要同时更新 `grok2api-secret` 中的 `bootstrap-version`，这样 Pod 重建后会重新覆盖 PVC 内的 `config.toml`。
 - `gpt-load` 使用 initContainer 幂等创建 `gpt_load` 数据库与用户；当前固定使用 `ghcr.io/tbphp/gpt-load:v1.4.8@sha256:719d5c885f3f3fc228123b78f6788c8604505c3c20717635f91fbb92e63fade3`，按 PostgreSQL + Redis 运行，使用 `ai-services-redis` 的 database 0，并显式保留 Mihomo 默认代理，运行日志保存在 `/app/data/logs`。
-- `codex2api` 使用 initContainer 幂等创建 `codex2api` 数据库与用户；当前固定使用 `ghcr.io/james-6-23/codex2api:2.2.7@sha256:0caf992db79c7392b0143e8cf49f19ad19b5b2b9c552e5a2abdef18c19e5f7d5`，按 PostgreSQL + Redis 缓存运行，使用 `ai-services-redis` 的 database 1，运行期图片与日志保存在 `/data`。
+- `codex2api` 使用 initContainer 幂等创建 `codex2api` 数据库与用户；当前固定使用 `ghcr.io/james-6-23/codex2api:2.3.0@sha256:26768c1c52f05b92cb4eb029858ca3dfb25d69a2cdf40f280a252240a23c2c0a`，按 PostgreSQL + Redis 缓存运行，使用 `ai-services-redis` 的 database 1，运行期图片与日志保存在 `/data`。
 - `halowebui` 使用 initContainer 幂等创建 `halowebui` 数据库与用户；当前固定使用 `ghcr.io/ztx888/halowebui:main@sha256:6ac7ed58a17779f1feb7a8bc562b4546985ef478d3ea1a53ca083442b856939f`，按 PostgreSQL + Redis 运行，使用 `ai-services-redis` 的 database 2，通过 `ai-services-redis-secret` 中的 default Redis 密码连接，并通过 `WEBSOCKET_MANAGER=redis` 将 WebSocket 事件同步也挂到共享 Redis。
 - `halowebui` 数据目录固定为 `/app/backend/data`，用于保留上传内容与运行时缓存；`WEBUI_SECRET_KEY` 必须稳定，首次注册用户会成为管理员。
 - `halowebui-secret` 只保存 HaloWebUI 自身的 `WEBUI_SECRET_KEY`、`HALOWEBUI_DB_PASSWORD` 与 `DATABASE_URL`；共享 Redis 密码继续由 `ai-services-redis-secret` 统一保存。
@@ -113,3 +117,4 @@
 - OutlookMail Plus（`outlook-email`）按上游建议保持单副本 + `Recreate`，不启用 Docker socket / Watchtower 自更新；Kubernetes 中未挂载 Docker socket，健康检查使用 `/healthz`。
 - Copilot API（`copilot-api`）当前固定使用 `ghcr.io/qlhazycoder/copilot-api:5.0.0@sha256:c5c998a55ab2440341e8217d4e9f5e97e52f23c943e990d51516065b262b9a39`，监听 `4141`，数据目录固定为 `/data`，健康检查使用 `/`。首次启动后通过内部端口转发访问 `/admin` 完成管理初始化，不在 Git 中提交 `ADMIN_SECRET` 或 `ADMIN_SECRET_HASH` 明文。
 - Notion2API（`notion2api`）当前固定使用 `ghcr.io/galiais/notion2api:v1.0.8@sha256:7aceac16c33689ed0801b4e8798786b36a3f0ba76b14c1550e5e8c0b6ee39723`，监听 `8787`，配置文件写入 `/app/data/config.json`，SQLite 与账号目录保存在同一 PVC。首次启动会从镜像内默认配置复制配置文件，必须通过端口转发进入 `/admin` 后立即修改默认管理密码、API Key 与 Notion 账号配置。
+- WA App（`wa-app`）当前固定使用 `ghcr.io/pood1e/wa-app-service:latest@sha256:94a23d506610f26b113453461503c65a6e1646f3feed0195d8865437d3ea5fdb`，gRPC 监听 `50091`，Dashboard 监听 `8080`，数据目录固定为 `/var/lib/wa-app`，健康检查使用 `/healthz`。当前不接共享 PostgreSQL / Redis，按上游默认 SQLite 运行，并通过 `WA_COMMON_PROXY` 和标准代理环境变量走 GPT Mihomo 节点。
