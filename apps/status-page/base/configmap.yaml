@@ -197,3 +197,20 @@ data:
         conditions:
           - "[STATUS] >= 200"
           - "[STATUS] < 400"
+      - name: wa-app
+        group: ai-services
+        url: http://wa-app.ai-services.svc.cluster.local:8080/healthz
+        interval: 1m
+        client:
+          timeout: 10s
+        conditions:
+          - "[STATUS] >= 200"
+          - "[STATUS] < 400"
+      - name: wa-app-grpc
+        group: ai-services
+        url: tcp://wa-app-grpc.ai-services.svc.cluster.local:50091
+        interval: 1m
+        client:
+          timeout: 10s
+        conditions:
+          - "[CONNECTED] == true"

@@ -5,7 +5,7 @@
 ## 分组
 
 - `proxy`：通过 `https://www.gstatic.com/generate_204` 验证 Mihomo 默认、GPT、US、JP 四个显式代理出口，预期 HTTP 状态码为 `204`；同时通过 `mihomo-api-ui:9097` TCP 检查 Mihomo Pod / Service 是否可连通。
-- `ai-services`：覆盖 `apps/ai-services/base` 中已有 Service。PostgreSQL、Redis、Kiro RS、CLIProxyAPI 使用 TCP 连通性检查；其余 HTTP 服务使用现有 readiness / liveness 路径。
+- `ai-services`：覆盖 `apps/ai-services/base` 中已有 Service。PostgreSQL、Redis、Kiro RS、CLIProxyAPI、WA App gRPC 使用 TCP 连通性检查；其余 HTTP 服务使用现有 readiness / liveness 路径。
 
 ## 访问入口
 
