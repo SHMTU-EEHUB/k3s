@@ -20,7 +20,7 @@
 - `infrastructure/longhorn/base`：Longhorn StorageClass、单节点副本设置、`master1` 磁盘声明，以及系统 SSD 先纳入 `fast` 层、后迁 worker SSD 的策略。
 
 - `apps/cloudflare-ddns/base`：Cloudflare DDNS ConfigMap、Deployment、加密后的 `cloudflare-ddns-secret`。
-- `apps/ai-services/base`：AI 服务组，包括共享 PostgreSQL（`longhorn-fast-1replica`）、Metapi、Aether（Rust Pioneer）+ 专用 Redis、GPT-Load / Codex2API / HaloWebUI 共用 Redis、OutlookMail Plus、Kiro、CLIProxyAPI、Grok2API、Gemini Web2API、Copilot API、Notion2API，以及加密后的 `secret-sealed.yaml`。
+- `apps/ai-services/base`：AI 服务组，包括共享 PostgreSQL（`longhorn-fast-1replica`）、Metapi、Aether（Rust Pioneer）+ 专用 Redis、GPT-Load / Codex2API / HaloWebUI 共用 Redis、OutlookMail Plus、Kiro、CLIProxyAPI、Grok2API、Gemini Web2API、Copilot API、Notion2API、WA App，以及加密后的 `secret-sealed.yaml`。
 - `apps/inventree/base`：InvenTree 库存 / 出入库 / BOM 管理服务，包括 PostgreSQL、Redis、InvenTree server / worker、Caddy 静态与媒体代理，以及加密后的 `secret-sealed.yaml`。
 - `clusters/master-node`：当前单 Master 集群聚合入口。
 
@@ -32,7 +32,7 @@
 - cert-manager / ACME 用于 DNS-01 的 Cloudflare API Token。
 - Authentik `secret_key`、数据库口令、SMTP 口令、OIDC / OAuth Client Secret。
 - Mihomo 订阅链接、代理节点密码、UUID、私钥、控制器密钥。
-- Metapi、Aether、Kiro、CLIProxyAPI、Grok2API、GPT-Load、Codex2API、HaloWebUI、OutlookMail Plus、Copilot API、Notion2API 的 API Key、管理 Token、数据库口令、Redis 口令、登录口令、`SECRET_KEY`、账号 Cookie 与 OAuth / Refresh Token。
+- Metapi、Aether、Kiro、CLIProxyAPI、Grok2API、GPT-Load、Codex2API、HaloWebUI、OutlookMail Plus、Copilot API、Notion2API、WA App 的 API Key、管理 Token、数据库口令、Redis 口令、登录口令、`SECRET_KEY`、账号 Cookie 与 OAuth / Refresh Token。
 - InvenTree 的 `INVENTREE_SECRET_KEY`、管理员初始密码、数据库口令、Redis 口令。
 - Kubeconfig、K3s token、Tailscale Auth Key、Tailnet ACL 私有策略。
 
