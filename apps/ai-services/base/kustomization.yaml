@@ -20,4 +20,5 @@ resources:
   - outlook-email.yaml
   - copilot-api.yaml
   - notion2api.yaml
+  - wa-app.yaml
   - ingress.yaml
