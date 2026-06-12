@@ -104,7 +104,7 @@
 - `aether` 当前固定使用上游 `ghcr.io/fawney19/aether:0.7.8@sha256:6fbafc539b3429c4bcb5bf268e2662287bdbc1feb51b7859f3ec9c4b04e15577`，对应 Rust Pioneer 路线的正式版本。
 - `kiro-rs` 当前固定使用 `ghcr.io/hank9999/kiro-rs:v2026.3.1@sha256:b9d89803f7ff1d74501fdf3bc843540935d3417a3c2baf1848fc15aff7ef3268`，通过 initContainer 将 `config.json` 与初始 `credentials.json` 复制到可写 PVC，避免 Token 刷新后无法回写；当前代理指向 `http://mihomo-gpt-listener.default.svc.cluster.local:7910`。
 - `cli-proxy-api` 通过 initContainer 将 `config.yaml` 复制到 PVC，并初始化持久化 `auths` 目录；当前固定使用 `eceasy/cli-proxy-api:v7.1.62@sha256:3d4625bbf4fa629819f912b78e99aa194a506c997a1fde021c821a1dd53492de`。
-- `grok2api` 当前固定使用 `ghcr.io/chenyme/grok2api:v2.0.4.rc4@sha256:e35ea179cc830e2a7c88918b263c6cbcfac9c179ca0c26e949615e7968427b08`，通过 initContainer 首次将 Secret 中的 `config.toml` 复制到 PVC；后续运行时配置、SQLite 账号库与日志都保存在同一个持久化卷中。
+- `grok2api` 当前固定使用 `ghcr.io/xianyudaxian/grok2api:latest@sha256:75adce0dc5fa6f0895966baa8056f7642920628195bca1001796268886c7dcf4`（对应 `https://github.com/XianYuDaXian/grok2api` fork 的 GHCR 发布镜像），通过 initContainer 首次将 Secret 中的 `config.toml` 复制到 PVC；后续运行时配置、SQLite 账号库与日志都保存在同一个持久化卷中。
 - 如需强制刷新 `grok2api` 的初始配置，需要同时更新 `grok2api-secret` 中的 `bootstrap-version`，这样 Pod 重建后会重新覆盖 PVC 内的 `config.toml`。
 - `gpt-load` 使用 initContainer 幂等创建 `gpt_load` 数据库与用户；当前固定使用 `ghcr.io/tbphp/gpt-load:v1.4.8@sha256:719d5c885f3f3fc228123b78f6788c8604505c3c20717635f91fbb92e63fade3`，按 PostgreSQL + Redis 运行，使用 `ai-services-redis` 的 database 0，并显式保留 Mihomo 默认代理，运行日志保存在 `/app/data/logs`。
 - `codex2api` 使用 initContainer 幂等创建 `codex2api` 数据库与用户；当前固定使用 `ghcr.io/james-6-23/codex2api:2.3.0@sha256:26768c1c52f05b92cb4eb029858ca3dfb25d69a2cdf40f280a252240a23c2c0a`，按 PostgreSQL + Redis 缓存运行，使用 `ai-services-redis` 的 database 1，运行期图片与日志保存在 `/data`。
