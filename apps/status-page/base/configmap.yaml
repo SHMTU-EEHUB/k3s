@@ -127,7 +127,7 @@ data:
           - "[CONNECTED] == true"
       - name: grok2api
         group: ai-services
-        url: http://grok2api.ai-services.svc.cluster.local:8000/health
+        url: http://grok2api.ai-services.svc.cluster.local:8000/
         interval: 1m
         client:
           timeout: 10s
