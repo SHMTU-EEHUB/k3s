@@ -67,7 +67,7 @@
   - `notion2api`：仅内部访问，`Service/notion2api:8787` 保持 ClusterIP，无 Ingress / NodePort；首次管理初始化建议使用 `kubectl -n ai-services port-forward svc/notion2api 8787:8787` 后访问 `http://127.0.0.1:8787/admin`。
   - `wa-app`：仅内部访问，`Service/wa-app:8080` 提供 Dashboard，`Service/wa-app-grpc:50091` 提供 gRPC，无 Ingress / NodePort；首次使用建议 `kubectl -n ai-services port-forward svc/wa-app 8080:8080` 后访问 `http://127.0.0.1:8080`。
 - 出站代理：
-  - `aether`：默认 Mihomo 节点 `7897`
+  - `aether`：默认 Mihomo 节点 `7897`；Authentik/OIDC 令牌兑换必须绕过 Mihomo，`NO_PROXY` / `no_proxy` 中显式包含 `auth.eehub.mingz.top` 与 `authentik-server.authentik.svc.cluster.local`。
   - `metapi`：默认 Mihomo 节点 `7897`
   - `kiro-rs`：GPT Mihomo 节点 `mihomo-gpt-listener:7910`
   - `cli-proxy-api`：默认 Mihomo 节点 `7897`
@@ -102,6 +102,7 @@
 - `metapi` 当前固定使用 `1467078763/metapi:sha-c308a3e@sha256:d29e74b18ce0734555c2088f1f6638e301a7fc01873ff979961ff8a1ac618da8`，额外挂载 `/app/data`，用于保留本地运行数据与非数据库文件状态。
 - `aether` 额外使用 initContainer 幂等创建 / 修正 `aether` 数据库与用户，兼容当前已运行的共享 PostgreSQL。
 - `aether` 当前固定使用上游 `ghcr.io/fawney19/aether:0.7.8@sha256:6fbafc539b3429c4bcb5bf268e2662287bdbc1feb51b7859f3ec9c4b04e15577`，对应 Rust Pioneer 路线的正式版本。
+- `aether` 的 Authentik 登录配置保存在 Aether 后台 / PostgreSQL 的 OAuth Provider 配置中，当前回调入口应使用 `https://ai.eehub.mingz.top/api/oauth/custom_authentik/callback`，前端完成页为 `https://ai.eehub.mingz.top/auth/callback`。如果出现“令牌兑换失败”，优先检查 Aether Pod 的代理环境，确保 `https://auth.eehub.mingz.top/application/o/token/` 与 `/userinfo/` 不经 Mihomo 代理。
 - `kiro-rs` 当前固定使用 `ghcr.io/hank9999/kiro-rs:v2026.3.1@sha256:b9d89803f7ff1d74501fdf3bc843540935d3417a3c2baf1848fc15aff7ef3268`，通过 initContainer 将 `config.json` 与初始 `credentials.json` 复制到可写 PVC，避免 Token 刷新后无法回写；当前代理指向 `http://mihomo-gpt-listener.default.svc.cluster.local:7910`。
 - `cli-proxy-api` 通过 initContainer 将 `config.yaml` 复制到 PVC，并初始化持久化 `auths` 目录；当前固定使用 `eceasy/cli-proxy-api:v7.1.62@sha256:3d4625bbf4fa629819f912b78e99aa194a506c997a1fde021c821a1dd53492de`。
 - `grok2api` 当前固定使用 `ghcr.io/xianyudaxian/grok2api:latest@sha256:75adce0dc5fa6f0895966baa8056f7642920628195bca1001796268886c7dcf4`（对应 `https://github.com/XianYuDaXian/grok2api` fork 的 GHCR 发布镜像），通过 initContainer 首次将 Secret 中的 `config.toml` 复制到 PVC；后续运行时配置、SQLite 账号库与日志都保存在同一个持久化卷中。
