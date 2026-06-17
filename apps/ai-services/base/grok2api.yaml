@@ -89,7 +89,7 @@ spec:
               readOnly: true
       containers:
         - name: grok2api
-          image: ghcr.io/xianyudaxian/grok2api:latest@sha256:75adce0dc5fa6f0895966baa8056f7642920628195bca1001796268886c7dcf4
+          image: ghcr.io/xianyudaxian/grok2api:latest@sha256:0b597746a31a40177cf097b12bb88888cb98b64da962fb58d4427519f2b1a780
           imagePullPolicy: Always
           ports:
             - name: http
