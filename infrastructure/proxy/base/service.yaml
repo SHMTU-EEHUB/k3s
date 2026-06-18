@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: resin
+  namespace: proxy
+  labels:
+    app: resin
+    app.kubernetes.io/name: resin
+    app.kubernetes.io/component: smart-proxy-gateway
+    app.kubernetes.io/part-of: eehub-proxy
+spec:
+  type: ClusterIP
+  selector:
+    app: resin
+  ports:
+    - name: http
+      protocol: TCP
+      port: 2260
+      targetPort: http

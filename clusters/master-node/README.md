@@ -10,6 +10,7 @@
 - `../../infrastructure/cert-manager/base`
 - `../../infrastructure/authentik/base`
 - `../../infrastructure/mihomo/base`
+- `../../infrastructure/proxy/base`
 - `../../apps/cloudflare-ddns/base`
 - `../../apps/ai-services/base`
 - `../../apps/status-page/base`
@@ -31,6 +32,7 @@ Sealed Secrets Controller 由 Helm 管理，配置见 `../../infrastructure/seal
 - `authentik-config` 由 `infrastructure/authentik/base/secret-sealed.yaml` 解封生成。
 - `cloudflare-ddns-secret` 由 `apps/cloudflare-ddns/base/secret-sealed.yaml` 解封生成。
 - `mihomo-config` 由 `infrastructure/mihomo/base/secret-sealed.yaml` 解封生成。
+- `resin-secret` 由 `infrastructure/proxy/base/secret-sealed.yaml` 解封生成。
 - `ai-postgresql-secret`、`metapi-secret`、`aether-secret`、`ai-services-redis-secret`、`kiro-rs-secret`、`cli-proxy-api-secret`、`grok2api-secret`、`gpt-load-secret`、`codex2api-secret`、`halowebui-secret`、`outlook-email-secret` 由 `apps/ai-services/base/secret-sealed.yaml` 解封生成。
 - `inventree-postgresql-secret`、`inventree-redis-secret`、`inventree-secret` 由 `apps/inventree/base/secret-sealed.yaml` 解封生成。
 - Longhorn CRD 已由 Helm 安装完成。

@@ -7,6 +7,7 @@ resources:
   - ../../infrastructure/cert-manager/base
   - ../../infrastructure/authentik/base
   - ../../infrastructure/mihomo/base
+  - ../../infrastructure/proxy/base
   - ../../apps/cloudflare-ddns/base
   - ../../apps/ai-services/base
   - ../../apps/status-page/base
