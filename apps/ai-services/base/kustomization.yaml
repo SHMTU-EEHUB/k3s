@@ -21,4 +21,5 @@ resources:
   - copilot-api.yaml
   - notion2api.yaml
   - wa-app.yaml
+  - chatgpt2api.yaml
   - ingress.yaml

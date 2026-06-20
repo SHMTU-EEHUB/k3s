@@ -1,0 +1,175 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: chatgpt2api
+  namespace: ai-services
+  labels:
+    app: chatgpt2api
+    app.kubernetes.io/name: chatgpt2api
+    app.kubernetes.io/component: chatgpt-image-gateway
+    app.kubernetes.io/part-of: eehub-ai-services
+spec:
+  type: ClusterIP
+  selector:
+    app: chatgpt2api
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: http
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: chatgpt2api-data
+  namespace: ai-services
+  labels:
+    app: chatgpt2api
+    app.kubernetes.io/name: chatgpt2api
+    app.kubernetes.io/component: chatgpt-image-gateway
+    app.kubernetes.io/part-of: eehub-ai-services
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: longhorn-hdd-1replica
+  resources:
+    requests:
+      storage: 10Gi
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: chatgpt2api-config
+  namespace: ai-services
+  labels:
+    app: chatgpt2api
+    app.kubernetes.io/name: chatgpt2api
+    app.kubernetes.io/component: chatgpt-image-gateway
+    app.kubernetes.io/part-of: eehub-ai-services
+data:
+  config.json: |
+    {}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: chatgpt2api
+  namespace: ai-services
+  labels:
+    app: chatgpt2api
+    app.kubernetes.io/name: chatgpt2api
+    app.kubernetes.io/component: chatgpt-image-gateway
+    app.kubernetes.io/part-of: eehub-ai-services
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: chatgpt2api
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: chatgpt2api
+        app.kubernetes.io/name: chatgpt2api
+        app.kubernetes.io/component: chatgpt-image-gateway
+        app.kubernetes.io/part-of: eehub-ai-services
+    spec:
+      automountServiceAccountToken: false
+      initContainers:
+        - name: prepare-config
+          image: busybox:1.38.0
+          imagePullPolicy: Always
+          command:
+            - sh
+            - -ec
+            - |
+              set -eu
+              mkdir -p /data
+              if [ ! -f /data/config.json ]; then
+                cp /config-template/config.json /data/config.json
+              fi
+              chmod 666 /data/config.json
+          volumeMounts:
+            - name: data
+              mountPath: /data
+            - name: config-template
+              mountPath: /config-template
+              readOnly: true
+      containers:
+        - name: chatgpt2api
+          image: ghcr.io/basketikun/chatgpt2api:latest
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 80
+              protocol: TCP
+          env:
+            - name: TZ
+              value: Asia/Shanghai
+            - name: STORAGE_BACKEND
+              value: json
+            - name: CHATGPT2API_BASE_URL
+              value: http://chatgpt2api.ai-services.svc.cluster.local
+            - name: CHATGPT2API_PROXY
+              value: http://mihomo-gpt-listener.default.svc.cluster.local:7910
+            - name: CHATGPT2API_AUTH_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: chatgpt2api-secret
+                  key: CHATGPT2API_AUTH_KEY
+            - name: HTTP_PROXY
+              value: http://mihomo-gpt-listener.default.svc.cluster.local:7910
+            - name: HTTPS_PROXY
+              value: http://mihomo-gpt-listener.default.svc.cluster.local:7910
+            - name: ALL_PROXY
+              value: http://mihomo-gpt-listener.default.svc.cluster.local:7910
+            - name: NO_PROXY
+              value: 127.0.0.1,localhost,.svc,.cluster.local,10.42.0.0/16,10.43.0.0/16,172.24.0.0/16,172.25.0.0/16
+            - name: http_proxy
+              value: http://mihomo-gpt-listener.default.svc.cluster.local:7910
+            - name: https_proxy
+              value: http://mihomo-gpt-listener.default.svc.cluster.local:7910
+            - name: all_proxy
+              value: http://mihomo-gpt-listener.default.svc.cluster.local:7910
+            - name: no_proxy
+              value: 127.0.0.1,localhost,.svc,.cluster.local,10.42.0.0/16,10.43.0.0/16,172.24.0.0/16,172.25.0.0/16
+          resources:
+            requests:
+              cpu: 200m
+              memory: 256Mi
+            limits:
+              cpu: "1"
+              memory: 1Gi
+          readinessProbe:
+            httpGet:
+              path: /health?format=json
+              port: http
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 6
+          livenessProbe:
+            httpGet:
+              path: /health?format=json
+              port: http
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+          volumeMounts:
+            - name: data
+              mountPath: /app/data
+            - name: data
+              mountPath: /app/config.json
+              subPath: config.json
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: chatgpt2api-data
+        - name: config-template
+          configMap:
+            name: chatgpt2api-config
+            items:
+              - key: config.json
+                path: config.json
