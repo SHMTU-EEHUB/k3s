@@ -83,7 +83,7 @@ spec:
       automountServiceAccountToken: false
       containers:
         - name: wa-app
-          image: ghcr.io/pood1e/wa-app-service:latest@sha256:1ca305ee2e1e3df4657ed4e90336c8ac3fbb5f812585ee983aa2496a045f8791
+          image: ghcr.io/pood1e/wa-app-service:latest@sha256:e462934c42f3c98dd6668f8322fb8df4c9590d5032577e5a7f2e4f8d1edd6f62
           imagePullPolicy: IfNotPresent
           ports:
             - name: grpc

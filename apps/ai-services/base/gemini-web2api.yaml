@@ -72,7 +72,7 @@ spec:
       automountServiceAccountToken: false
       containers:
         - name: gemini-web2api
-          image: ghcr.io/sophomoresty/gemini-web2api:latest@sha256:24a27c57d4fd363073ce5e2f127dd62d053d5dfffd1b0869886b2f92f142f502
+          image: ghcr.io/sophomoresty/gemini-web2api:latest@sha256:61e1a64db4b02c63b141671b7a9463c7e7e699ff99125a976780e78d4b4b5180
           imagePullPolicy: Always
           ports:
             - name: http
