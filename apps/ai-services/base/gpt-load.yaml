@@ -126,7 +126,7 @@ spec:
               memory: 256Mi
       containers:
         - name: gpt-load
-          image: ghcr.io/tbphp/gpt-load:v1.4.8@sha256:719d5c885f3f3fc228123b78f6788c8604505c3c20717635f91fbb92e63fade3
+          image: ghcr.io/tbphp/gpt-load:v1.4.9@sha256:c83996962ed94215e41678edc946525ec50b0ed5fabc62b149112e32a2e288dc
           imagePullPolicy: Always
           ports:
             - name: http
