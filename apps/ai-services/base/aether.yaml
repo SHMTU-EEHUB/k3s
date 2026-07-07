@@ -180,25 +180,8 @@ spec:
                 secretKeyRef:
                   name: aether-secret
                   key: ADMIN_PASSWORD
-            - name: HTTP_PROXY
-              value: http://mihomo-proxy-nodeport.default.svc.cluster.local:7897
-            - name: HTTPS_PROXY
-              value: http://mihomo-proxy-nodeport.default.svc.cluster.local:7897
-            - name: ALL_PROXY
-              value: http://mihomo-proxy-nodeport.default.svc.cluster.local:7897
-            # Authentik/OIDC token exchange must stay on the in-cluster path.
-            # Routing auth.eehub.mingz.top through Mihomo can make Aether callbacks
-            # fail with token_exchange_failed after an outbound HTTP timeout.
-            - name: NO_PROXY
-              value: 127.0.0.1,localhost,.svc,.cluster.local,ai-postgresql,ai-postgresql.ai-services.svc,ai-postgresql.ai-services.svc.cluster.local,aether-redis,aether-redis.ai-services.svc,aether-redis.ai-services.svc.cluster.local,auth.eehub.mingz.top,authentik-server,authentik-server.authentik.svc,authentik-server.authentik.svc.cluster.local,172.24.0.0/16,172.25.0.0/16
-            - name: http_proxy
-              value: http://mihomo-proxy-nodeport.default.svc.cluster.local:7897
-            - name: https_proxy
-              value: http://mihomo-proxy-nodeport.default.svc.cluster.local:7897
-            - name: all_proxy
-              value: http://mihomo-proxy-nodeport.default.svc.cluster.local:7897
-            - name: no_proxy
-              value: 127.0.0.1,localhost,.svc,.cluster.local,ai-postgresql,ai-postgresql.ai-services.svc,ai-postgresql.ai-services.svc.cluster.local,aether-redis,aether-redis.ai-services.svc,aether-redis.ai-services.svc.cluster.local,auth.eehub.mingz.top,authentik-server,authentik-server.authentik.svc,authentik-server.authentik.svc.cluster.local,172.24.0.0/16,172.25.0.0/16
+            # Aether intentionally does not set HTTP_PROXY/HTTPS_PROXY/ALL_PROXY
+            # by default; add explicit proxy env here only when needed.
           resources:
             requests:
               cpu: 250m
