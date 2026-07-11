@@ -26,7 +26,7 @@ spec:
       automountServiceAccountToken: false
       containers:
         - name: resin
-          image: ghcr.io/resinat/resin:1.1.1
+          image: ghcr.io/resinat/resin:1.1.2@sha256:6811601ba1025add0acbc12191971e0e4464e2b51a859f110f1577fbd907b613
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
