@@ -3,6 +3,8 @@ kind: Application
 metadata:
   name: eehub-master-node
   namespace: argocd
+  annotations:
+    argocd.argoproj.io/deletion-approved: "2026-07-12T20:38:48Z"
   labels:
     app.kubernetes.io/name: eehub-master-node
     app.kubernetes.io/part-of: eehub-gitops
