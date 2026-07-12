@@ -7,8 +7,6 @@ resources:
   - namespace.yaml
   - postgresql.yaml
   - metapi.yaml
-  - anyrouter-check-in-proof-direct-stage2-sealed.yaml
-  - anyrouter-check-in-proof-direct-stage2.yaml
   - aether-redis.yaml
   - ai-services-redis.yaml
   - aether.yaml
