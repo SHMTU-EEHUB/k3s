@@ -7,6 +7,7 @@ resources:
   - namespace.yaml
   - postgresql.yaml
   - metapi.yaml
+  - anyrouter-credential-sealer-stage1.yaml
   - aether-redis.yaml
   - ai-services-redis.yaml
   - aether.yaml
