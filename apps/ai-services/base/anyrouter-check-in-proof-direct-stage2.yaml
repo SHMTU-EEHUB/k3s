@@ -1,0 +1,160 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: anyrouter-check-in-proof-direct-20260712-01
+  namespace: ai-services
+  labels:
+    app.kubernetes.io/name: anyrouter-check-in-proof
+    app.kubernetes.io/instance: anyrouter-check-in-proof-direct-20260712-01
+    app.kubernetes.io/component: direct-egress-proof
+    app.kubernetes.io/part-of: eehub-ai-services
+data:
+  PROOF_EGRESS_SALT: 7d9c2a6f03b84e1195a8c47e62f1d0b3
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: anyrouter-check-in-proof-direct-20260712-01
+  namespace: ai-services
+  labels:
+    app.kubernetes.io/name: anyrouter-check-in-proof
+    app.kubernetes.io/instance: anyrouter-check-in-proof-direct-20260712-01
+    app.kubernetes.io/component: direct-egress-proof
+    app.kubernetes.io/part-of: eehub-ai-services
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: anyrouter-check-in-proof
+      app.kubernetes.io/instance: anyrouter-check-in-proof-direct-20260712-01
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress: []
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+            except:
+              - 0.0.0.0/8
+              - 10.0.0.0/8
+              - 100.64.0.0/10
+              - 127.0.0.0/8
+              - 169.254.0.0/16
+              - 172.16.0.0/12
+              - 192.0.0.0/24
+              - 192.0.2.0/24
+              - 192.88.99.0/24
+              - 192.168.0.0/16
+              - 198.18.0.0/15
+              - 198.51.100.0/24
+              - 203.0.113.0/24
+              - 224.0.0.0/4
+              - 240.0.0.0/4
+      ports:
+        - protocol: TCP
+          port: 443
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: anyrouter-check-in-proof-direct-20260712-01
+  namespace: ai-services
+  annotations:
+    argocd.argoproj.io/sync-wave: "100"
+  labels:
+    app.kubernetes.io/name: anyrouter-check-in-proof
+    app.kubernetes.io/instance: anyrouter-check-in-proof-direct-20260712-01
+    app.kubernetes.io/component: direct-egress-proof
+    app.kubernetes.io/part-of: eehub-ai-services
+spec:
+  completions: 1
+  parallelism: 1
+  backoffLimit: 0
+  activeDeadlineSeconds: 240
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: anyrouter-check-in-proof
+        app.kubernetes.io/instance: anyrouter-check-in-proof-direct-20260712-01
+        app.kubernetes.io/component: direct-egress-proof
+        app.kubernetes.io/part-of: eehub-ai-services
+    spec:
+      automountServiceAccountToken: false
+      enableServiceLinks: false
+      restartPolicy: Never
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: anyrouter-check-in-proof
+          image: ghcr.io/zjm54321/anyrouter-reference-proof:f62ccb39ad1609b379cbbdd073fe5d6cc94501b5@sha256:1eca2911ed30a91eeca43afc8d9478ed950331a6bd4546cfbb144bd3ca776565
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          env:
+            - name: ANYROUTER_EMAIL
+              valueFrom:
+                secretKeyRef:
+                  name: anyrouter-check-in-once
+                  key: email
+            - name: ANYROUTER_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: anyrouter-check-in-once
+                  key: password
+            - name: PROOF_MODE
+              value: "true"
+            - name: PROOF_PROXY_MODE
+              value: direct
+            - name: PROOF_EGRESS_URL
+              value: https://api.ipify.org?format=json
+            - name: PROOF_EGRESS_SALT
+              valueFrom:
+                configMapKeyRef:
+                  name: anyrouter-check-in-proof-direct-20260712-01
+                  key: PROOF_EGRESS_SALT
+            - name: HTTP_PROXY
+              value: ""
+            - name: HTTPS_PROXY
+              value: ""
+            - name: ALL_PROXY
+              value: ""
+            - name: http_proxy
+              value: ""
+            - name: https_proxy
+              value: ""
+            - name: all_proxy
+              value: ""
+            - name: CLOAKBROWSER_AUTO_UPDATE
+              value: "false"
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: "1"
+              memory: 1Gi
+          volumeMounts:
+            - name: runtime
+              mountPath: /tmp
+      volumes:
+        - name: runtime
+          emptyDir:
+            medium: Memory
+            sizeLimit: 512Mi
