@@ -23,10 +23,14 @@ kind: PersistentVolumeClaim
 metadata:
   name: grok2api-data
   namespace: ai-services
+  annotations:
+    argocd.argoproj.io/sync-options: Prune=false,Delete=false
   labels:
+    app: grok2api
     app.kubernetes.io/name: grok2api
     app.kubernetes.io/component: grok-gateway
     app.kubernetes.io/part-of: eehub-ai-services
+    app.kubernetes.io/version: v3
 spec:
   accessModes:
     - ReadWriteOnce
@@ -45,6 +49,7 @@ metadata:
     app.kubernetes.io/name: grok2api
     app.kubernetes.io/component: grok-gateway
     app.kubernetes.io/part-of: eehub-ai-services
+    app.kubernetes.io/version: v3
 spec:
   replicas: 1
   selector:
@@ -54,42 +59,41 @@ spec:
     type: Recreate
   template:
     metadata:
+      annotations:
+        grok2api/config-revision: "1"
       labels:
         app: grok2api
         app.kubernetes.io/name: grok2api
         app.kubernetes.io/component: grok-gateway
         app.kubernetes.io/part-of: eehub-ai-services
+        app.kubernetes.io/version: v3
     spec:
       automountServiceAccountToken: false
       initContainers:
-        - name: prepare-config
-          image: busybox:1.38.0
+        - name: prepare-data
+          image: busybox:1.38.0@sha256:fd8d9aa63ba2f0982b5304e1ee8d3b90a210bc1ffb5314d980eb6962f1a9715d
           imagePullPolicy: Always
           command:
             - sh
             - -ec
-            - |
-              set -eu
-              mkdir -p /storage/data /storage/logs
-              bootstrap_version="$(cat /secret/bootstrap-version)"
-              current_version=""
-              if [ -f /storage/data/.bootstrap-version ]; then
-                current_version="$(cat /storage/data/.bootstrap-version)"
-              fi
-              if [ ! -f /storage/data/config.toml ] || [ "$current_version" != "$bootstrap_version" ]; then
-                cp /secret/config.toml /storage/data/config.toml
-                printf '%s' "$bootstrap_version" > /storage/data/.bootstrap-version
-              fi
-              chmod 600 /storage/data/config.toml /storage/data/.bootstrap-version
+            - mkdir -p /app/data && chown -R 10001:10001 /app/data
+          securityContext:
+            runAsUser: 0
+            runAsGroup: 0
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+              add:
+                - CHOWN
+            seccompProfile:
+              type: RuntimeDefault
           volumeMounts:
             - name: data
-              mountPath: /storage
-            - name: secret-config
-              mountPath: /secret
-              readOnly: true
+              mountPath: /app/data
       containers:
         - name: grok2api
-          image: ghcr.io/xianyudaxian/grok2api:latest@sha256:681c6ea36c28bbb15c5a64ccb76af2062cfb5810c4ffb0c8e165158a706d6961
+          image: ghcr.io/chenyme/grok2api:3.0.0@sha256:ecb71a899b68a5ef11b5a9501cabfd171f30c9592561cdaef546893753808b2b
           imagePullPolicy: Always
           ports:
             - name: http
@@ -98,26 +102,37 @@ spec:
           env:
             - name: TZ
               value: Asia/Shanghai
-            - name: LOG_LEVEL
-              value: INFO
-            - name: LOG_FILE_ENABLED
-              value: "true"
-            - name: SERVER_HOST
-              value: 0.0.0.0
-            - name: SERVER_PORT
-              value: "8000"
-            - name: SERVER_WORKERS
-              value: "1"
-            - name: ACCOUNT_STORAGE
-              value: local
-            - name: ACCOUNT_LOCAL_PATH
-              value: /storage/data/accounts.db
-            - name: CONFIG_LOCAL_PATH
-              value: /storage/data/config.toml
-            - name: DATA_DIR
-              value: /storage/data
-            - name: LOG_DIR
-              value: /storage/logs
+            - name: HTTP_PROXY
+              value: http://mihomo-proxy-nodeport.default.svc.cluster.local:7897
+            - name: HTTPS_PROXY
+              value: http://mihomo-proxy-nodeport.default.svc.cluster.local:7897
+            - name: ALL_PROXY
+              value: http://mihomo-proxy-nodeport.default.svc.cluster.local:7897
+            - name: http_proxy
+              value: http://mihomo-proxy-nodeport.default.svc.cluster.local:7897
+            - name: https_proxy
+              value: http://mihomo-proxy-nodeport.default.svc.cluster.local:7897
+            - name: all_proxy
+              value: http://mihomo-proxy-nodeport.default.svc.cluster.local:7897
+            - name: NO_PROXY
+              value: 127.0.0.1,localhost,.svc,.cluster.local,kubernetes.default.svc,172.24.0.0/16,172.25.0.0/16
+            - name: no_proxy
+              value: 127.0.0.1,localhost,.svc,.cluster.local,kubernetes.default.svc,172.24.0.0/16,172.25.0.0/16
+          securityContext:
+            runAsUser: 0
+            runAsGroup: 0
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+              add:
+                - CHOWN
+                - DAC_OVERRIDE
+                - FOWNER
+                - SETUID
+                - SETGID
+            seccompProfile:
+              type: RuntimeDefault
           resources:
             requests:
               cpu: 200m
@@ -127,23 +142,26 @@ spec:
               memory: 1Gi
           readinessProbe:
             httpGet:
-              path: /
+              path: /readyz
               port: 8000
-            initialDelaySeconds: 20
+            initialDelaySeconds: 5
             periodSeconds: 10
             timeoutSeconds: 5
-            failureThreshold: 6
+            failureThreshold: 3
           livenessProbe:
             httpGet:
-              path: /
+              path: /healthz
               port: 8000
-            initialDelaySeconds: 40
-            periodSeconds: 20
+            initialDelaySeconds: 15
+            periodSeconds: 30
             timeoutSeconds: 5
             failureThreshold: 3
           volumeMounts:
             - name: data
-              mountPath: /storage
+              mountPath: /app/data
+            - name: secret-config
+              mountPath: /run/grok2api
+              readOnly: true
       volumes:
         - name: data
           persistentVolumeClaim:
@@ -151,3 +169,7 @@ spec:
         - name: secret-config
           secret:
             secretName: grok2api-secret
+            defaultMode: 0400
+            items:
+              - key: config.yaml
+                path: config.yaml

@@ -11,7 +11,7 @@
 - `Deployment/ai-services-redis`：GPT-Load、Codex2API 与 HaloWebUI 共用 Redis。
 - `Deployment/kiro-rs`：Kiro 反代，走 Mihomo GPT 专用节点。
 - `Deployment/cli-proxy-api`：Codex / CLIProxyAPI 反代，走 Mihomo 默认节点。
-- `Deployment/grok2api`：Grok Web 转 OpenAI / Anthropic 兼容 API，默认仅内部访问，走 Mihomo 默认节点。
+- `Deployment/grok2api`：官方 v3.0.0 Grok 网关，`Service/grok2api` 当前承载该版本。
 - `Deployment/gpt-load`：GPT-Load 多渠道 AI 代理，走 Mihomo 默认节点，使用共享 PostgreSQL 与共享 Redis。
 - `Deployment/codex2api`：Codex2API 管理台与 API 网关，走 Mihomo 默认节点，使用共享 PostgreSQL 与共享 Redis。
 - `Deployment/halowebui`：HaloWebUI AI Web 控制台，走 Mihomo 默认节点，使用共享 PostgreSQL 与共享 Redis。
@@ -63,7 +63,7 @@
   - `ai.eehub.mingz.top` 默认同时保留 HTTP / HTTPS；`metaapi.eehub.mingz.top` 暂时保持 HTTP。
   - `chat.eehub.mingz.top` 通过 Traefik + cert-manager 提供 HTTPS，并承载 HaloWebUI 的 WebSocket 路由。
   - `metapi`：除 Ingress 外不暴露 NodePort，`Service/metapi:4000` 保持 ClusterIP。
-  - `grok2api`：仅内部访问，`Service/grok2api:8000`。
+  - `grok2api`：仅内部访问，`Service/grok2api:8000` 当前承载 v3。
   - `gemini-web2api`：仅内部访问，`Service/gemini-web2api:8081` 保持 ClusterIP，无 Ingress / NodePort。
   - `copilot-api`：仅内部访问，`Service/copilot-api:4141` 保持 ClusterIP，无 Ingress / NodePort；首次管理初始化建议使用 `kubectl -n ai-services port-forward svc/copilot-api 4141:4141` 后访问 `http://127.0.0.1:4141/admin`。
   - `notion2api`：仅内部访问，`Service/notion2api:8787` 保持 ClusterIP，无 Ingress / NodePort；首次管理初始化建议使用 `kubectl -n ai-services port-forward svc/notion2api 8787:8787` 后访问 `http://127.0.0.1:8787/admin`。
@@ -73,7 +73,7 @@
   - `metapi`：默认 Mihomo 节点 `7897`
   - `kiro-rs`：GPT Mihomo 节点 `mihomo-gpt-listener:7910`
   - `cli-proxy-api`：默认 Mihomo 节点 `7897`
-  - `grok2api`：默认 Mihomo 节点 `7897`
+  - `grok2api`：标准代理环境变量指向 Mihomo 节点 `7897`，仅覆盖 Build API / Statsig；Web chat、image、video 必须另在管理后台配置数据库出站 HTTP 节点。
   - `gpt-load`：默认 Mihomo 节点 `7897`
   - `codex2api`：默认 Mihomo 节点 `7897`
   - `halowebui`：默认 Mihomo 节点 `7897`
@@ -89,7 +89,7 @@
   - Metapi 数据 PVC：`2Gi`，`longhorn-hdd-1replica`
   - Kiro 配置 PVC：`1Gi`，`longhorn-hdd-1replica`
   - CPA 数据 PVC：`2Gi`，`longhorn-hdd-1replica`
-  - Grok2API 数据 PVC：`5Gi`，`longhorn-hdd-1replica`
+  - Grok2API 数据 PVC `grok2api-data`：`5Gi`，`longhorn-hdd-1replica`。
   - GPT-Load 数据 PVC：`5Gi`，`longhorn-hdd-1replica`
   - Codex2API 数据 PVC：`5Gi`，`longhorn-hdd-1replica`
   - HaloWebUI 数据 PVC：`5Gi`，`longhorn-hdd-1replica`
@@ -107,8 +107,10 @@
 - `aether` 的 Authentik 登录配置保存在 Aether 后台 / PostgreSQL 的 OAuth Provider 配置中，当前回调入口应使用 `https://ai.eehub.mingz.top/api/oauth/custom_authentik/callback`，前端完成页为 `https://ai.eehub.mingz.top/auth/callback`。如果出现“令牌兑换失败”，优先确认 Aether Pod 未设置 `HTTP_PROXY` / `HTTPS_PROXY` / `ALL_PROXY` 等代理环境变量，确保 `https://auth.eehub.mingz.top/application/o/token/` 与 `/userinfo/` 不经 Mihomo 代理。
 - `kiro-rs` 当前固定使用 `ghcr.io/hank9999/kiro-rs:v2026.3.1@sha256:b9d89803f7ff1d74501fdf3bc843540935d3417a3c2baf1848fc15aff7ef3268`，通过 initContainer 将 `config.json` 与初始 `credentials.json` 复制到可写 PVC，避免 Token 刷新后无法回写；当前代理指向 `http://mihomo-gpt-listener.default.svc.cluster.local:7910`。
 - `cli-proxy-api` 通过 initContainer 将 `config.yaml` 复制到 PVC，并初始化持久化 `auths` 目录；当前固定使用 `eceasy/cli-proxy-api:v7.2.56@sha256:0b8ac8468fbff9f6a0b9b726f4d8187eb2d7e5e488a0f371fa5faf161d787952`。
-- `grok2api` 当前固定使用 `ghcr.io/xianyudaxian/grok2api:latest@sha256:681c6ea36c28bbb15c5a64ccb76af2062cfb5810c4ffb0c8e165158a706d6961`（对应 `https://github.com/XianYuDaXian/grok2api` fork 的 GHCR 发布镜像），通过 initContainer 首次将 Secret 中的 `config.toml` 复制到 PVC；后续运行时配置、SQLite 账号库与日志都保存在同一个持久化卷中。
-- 如需强制刷新 `grok2api` 的初始配置，需要同时更新 `grok2api-secret` 中的 `bootstrap-version`，这样 Pod 重建后会重新覆盖 PVC 内的 `config.toml`。
+- `grok2api` 当前固定使用官方 `ghcr.io/chenyme/grok2api:3.0.0@sha256:ecb71a899b68a5ef11b5a9501cabfd171f30c9592561cdaef546893753808b2b`。配置从 `grok2api-secret` 挂载到 `/run/grok2api/config.yaml`，数据位于原名 PVC 的 `/app/data`；本次为破坏性原位升级，v3 不迁移或复用旧 v2 数据格式。
+- 首次登录使用 `kubectl -n ai-services port-forward deployment/grok2api 8000:8000`，然后访问 `http://127.0.0.1:8000` 并以 `admin` 登录。bootstrap 密码仅保存在被忽略的 `.agent-tmp/ai-services-grok2api-secret.local.yaml` 明文清单和提交的 SealedSecret 密文中，不得提交或输出明文。
+- `secrets.credentialEncryptionKey` 是已保存 provider 凭据的加密根密钥，必须保持稳定；轮换或丢失会导致既有凭据无法解密。
+- v3 的标准 `HTTP_PROXY` / `HTTPS_PROXY` / `ALL_PROXY` 仅覆盖 Build API / Statsig。Web chat、image、video 不读取这些环境变量；首次登录后必须在管理后台新增并启用指向 `http://mihomo-proxy-nodeport.default.svc.cluster.local:7897` 的数据库出站 HTTP 节点。
 - `gpt-load` 使用 initContainer 幂等创建 `gpt_load` 数据库与用户；当前固定使用 `ghcr.io/tbphp/gpt-load:v1.4.9@sha256:c83996962ed94215e41678edc946525ec50b0ed5fabc62b149112e32a2e288dc`，按 PostgreSQL + Redis 运行，使用 `ai-services-redis` 的 database 0，并显式保留 Mihomo 默认代理，运行日志保存在 `/app/data/logs`。
 - `codex2api` 使用 initContainer 幂等创建 `codex2api` 数据库与用户；当前固定使用 `ghcr.io/james-6-23/codex2api:2.4.9@sha256:ca1ae41b6c1cbc73018a4f6ecd15508e395200aed75295fff3675aba9d572bda`，按 PostgreSQL + Redis 缓存运行，使用 `ai-services-redis` 的 database 1，运行期图片与日志保存在 `/data`。
 - `halowebui` 使用 initContainer 幂等创建 `halowebui` 数据库与用户；当前固定使用 `ghcr.io/ztx888/halowebui:main@sha256:6ac7ed58a17779f1feb7a8bc562b4546985ef478d3ea1a53ca083442b856939f`，按 PostgreSQL + Redis 运行，使用 `ai-services-redis` 的 database 2，通过 `ai-services-redis-secret` 中的 default Redis 密码连接，并通过 `WEBSOCKET_MANAGER=redis` 将 WebSocket 事件同步也挂到共享 Redis。
