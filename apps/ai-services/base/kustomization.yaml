@@ -4,6 +4,8 @@ resources:
   # Generate this file from secret.example.yaml with kubeseal before syncing this base.
   # Do not commit unencrypted Secret manifests.
   - secret-sealed.yaml
+  - anyrouter-check-in-proof-direct-stage2-sealed.yaml
+  - anyrouter-check-in-proof-direct-stage2.yaml
   - namespace.yaml
   - postgresql.yaml
   - metapi.yaml
@@ -23,4 +25,3 @@ resources:
   - wa-app.yaml
   - chatgpt2api.yaml
   - ingress.yaml
-  - anyrouter-credential-sealer-stage1.yaml
