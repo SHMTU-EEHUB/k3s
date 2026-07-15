@@ -63,7 +63,7 @@ spec:
       automountServiceAccountToken: false
       initContainers:
         - name: prepare-config
-          image: busybox:1.38.0
+          image: busybox:1.38.0@sha256:fd8d9aa63ba2f0982b5304e1ee8d3b90a210bc1ffb5314d980eb6962f1a9715d
           imagePullPolicy: Always
           command:
             - sh
@@ -81,7 +81,7 @@ spec:
               readOnly: true
       containers:
         - name: cli-proxy-api
-          image: eceasy/cli-proxy-api:v7.2.56@sha256:0b8ac8468fbff9f6a0b9b726f4d8187eb2d7e5e488a0f371fa5faf161d787952
+          image: eceasy/cli-proxy-api:v7.2.77@sha256:aeaa68c78e53e7efcc42187170218c83369cdffbb706ea70584fd72c072b7fcd
           imagePullPolicy: Always
           ports:
             - name: http
