@@ -98,7 +98,7 @@ spec:
               readOnly: true
       containers:
         - name: chatgpt2api
-          image: ghcr.io/basketikun/chatgpt2api:v1.6.0@sha256:dd00acff16065a2c9df7d68544797e6309d1fc123a5e598b9a9b7b2ecf645e19
+          image: ghcr.io/basketikun/chatgpt2api:v1.7.0@sha256:e696efc15f4554b5d4fd75f0d06c3441b6b97ae11f64bf04ca86d39d33df14d5
           imagePullPolicy: Always
           ports:
             - name: http
