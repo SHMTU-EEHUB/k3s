@@ -16,9 +16,12 @@ and resealing the token. Never commit the unsealed Secret or real token.
 
 Cloudflare Dashboard stores the route for this token tunnel:
 
-- hostname: `api.eehub.mingz.top`
+- hostname: `api.mingz.top`
 - path regex: `^/v1($|/)`
 - HTTP origin: `aether.ai-services.svc.cluster.local:8084`
+
+Using `api.mingz.top` keeps the public hostname within Cloudflare Universal
+SSL coverage and avoids deep-subdomain certificate limitations.
 
 Because `cloudflared tunnel run --token` receives remotely managed ingress
 configuration, this base intentionally has no ingress ConfigMap, `--config`
