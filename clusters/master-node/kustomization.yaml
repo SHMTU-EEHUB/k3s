@@ -9,6 +9,7 @@ resources:
   - ../../infrastructure/mihomo/base
   - ../../infrastructure/proxy/base
   - ../../apps/cloudflare-ddns/base
+  - ../../apps/cloudflare-tunnel/base
   - ../../apps/ai-services/base
   - ../../apps/status-page/base
   - ../../apps/inventree/base
