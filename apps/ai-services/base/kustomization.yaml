@@ -23,4 +23,5 @@ resources:
   - wa-app.yaml
   - chatgpt2api.yaml
   - ingress.yaml
-  - anyrouter-credential-sealer-stage1.yaml
+  - anyrouter-check-in-proof-direct-stage2-sealed.yaml
+  - anyrouter-check-in-proof-direct-stage2.yaml
