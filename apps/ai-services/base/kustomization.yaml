@@ -22,4 +22,5 @@ resources:
   - notion2api.yaml
   - wa-app.yaml
   - chatgpt2api.yaml
+  - anyrouter-credential-sealer-stage1.yaml
   - ingress.yaml
