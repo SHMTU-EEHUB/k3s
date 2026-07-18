@@ -11,7 +11,7 @@
 - `Deployment/ai-services-redis`：GPT-Load、Codex2API 与 HaloWebUI 共用 Redis。
 - `Deployment/kiro-rs`：Kiro 反代，走 Mihomo GPT 专用节点。
 - `Deployment/cli-proxy-api`：Codex / CLIProxyAPI 反代，走 Mihomo 默认节点。
-- `Deployment/grok2api`：官方 v3.0.0 Grok 网关，`Service/grok2api` 当前承载该版本。
+- `Deployment/grok2api`：官方 v3.0.4 Grok 网关，`Service/grok2api` 当前承载该版本。
 - `Deployment/gpt-load`：GPT-Load 多渠道 AI 代理，走 Mihomo 默认节点，使用共享 PostgreSQL 与共享 Redis。
 - `Deployment/codex2api`：Codex2API 管理台与 API 网关，走 Mihomo 默认节点，使用共享 PostgreSQL 与共享 Redis。
 - `Deployment/halowebui`：HaloWebUI AI Web 控制台，走 Mihomo 默认节点，使用共享 PostgreSQL 与共享 Redis。
@@ -97,6 +97,7 @@
   - Copilot API 数据 PVC：`5Gi`，`longhorn-hdd-1replica`
   - Notion2API 数据 PVC：`5Gi`，`longhorn-hdd-1replica`
   - WA App 数据 PVC：`5Gi`，`longhorn-hdd-1replica`
+  - ChatGPT2API 数据 PVC：`10Gi`，`longhorn-hdd-1replica`
 
 ## 初始化说明
 
@@ -106,13 +107,13 @@
 - `aether` 当前固定使用上游 `ghcr.io/fawney19/aether:0.7.10@sha256:60c4194c22c3a7e6247fd9ec3663d11e29b9a71ab75d739cfae443e0e4ee055b`，对应 Rust Pioneer 路线的正式版本。
 - `aether` 的 Authentik 登录配置保存在 Aether 后台 / PostgreSQL 的 OAuth Provider 配置中，当前回调入口应使用 `https://ai.eehub.mingz.top/api/oauth/custom_authentik/callback`，前端完成页为 `https://ai.eehub.mingz.top/auth/callback`。如果出现“令牌兑换失败”，优先确认 Aether Pod 未设置 `HTTP_PROXY` / `HTTPS_PROXY` / `ALL_PROXY` 等代理环境变量，确保 `https://auth.eehub.mingz.top/application/o/token/` 与 `/userinfo/` 不经 Mihomo 代理。
 - `kiro-rs` 当前固定使用 `ghcr.io/hank9999/kiro-rs:v2026.3.1@sha256:b9d89803f7ff1d74501fdf3bc843540935d3417a3c2baf1848fc15aff7ef3268`，通过 initContainer 将 `config.json` 与初始 `credentials.json` 复制到可写 PVC，避免 Token 刷新后无法回写；当前代理指向 `http://mihomo-gpt-listener.default.svc.cluster.local:7910`。
-- `cli-proxy-api` 通过 initContainer 将 `config.yaml` 复制到 PVC，并初始化持久化 `auths` 目录；当前固定使用 `eceasy/cli-proxy-api:v7.2.77@sha256:aeaa68c78e53e7efcc42187170218c83369cdffbb706ea70584fd72c072b7fcd`。
-- `grok2api` 当前固定使用官方 `ghcr.io/chenyme/grok2api:latest@sha256:0bbfd52449df93c4ab16e3e4394ed8debfa1ac793835de4f734dbea8f8343274`。配置从 `grok2api-secret` 挂载到 `/run/grok2api/config.yaml`，数据位于原名 PVC 的 `/app/data`；本次为破坏性原位升级，v3 不迁移或复用旧 v2 数据格式。
+- `cli-proxy-api` 通过 initContainer 将 `config.yaml` 复制到 PVC，并初始化持久化 `auths` 目录；当前固定使用 `eceasy/cli-proxy-api:v7.2.88@sha256:5f8d7999b8b4a0b2bd48705db845c6f311f7e7dc49199c94b9ef30957f390947`。
+- `grok2api` 当前固定使用官方 `ghcr.io/chenyme/grok2api:v3.0.4@sha256:9b42950c9fd65f74009d2b62d4244c95b0bc777f54aa20bd86cda1f088784a76`。配置从 `grok2api-secret` 挂载到 `/run/grok2api/config.yaml`，数据位于原名 PVC 的 `/app/data`；当前已使用 v3 数据格式，v3 不迁移或复用旧 v2 数据格式。
 - 首次登录使用 `kubectl -n ai-services port-forward deployment/grok2api 8000:8000`，然后访问 `http://127.0.0.1:8000` 并以 `admin` 登录。bootstrap 密码仅保存在被忽略的 `.agent-tmp/ai-services-grok2api-secret.local.yaml` 明文清单和提交的 SealedSecret 密文中，不得提交或输出明文。
 - `secrets.credentialEncryptionKey` 是已保存 provider 凭据的加密根密钥，必须保持稳定；轮换或丢失会导致既有凭据无法解密。
 - v3 的标准 `HTTP_PROXY` / `HTTPS_PROXY` / `ALL_PROXY` 仅覆盖 Build API / Statsig。Web chat、image、video 不读取这些环境变量；首次登录后必须在管理后台新增并启用指向 `http://mihomo-proxy-nodeport.default.svc.cluster.local:7897` 的数据库出站 HTTP 节点。
 - `gpt-load` 使用 initContainer 幂等创建 `gpt_load` 数据库与用户；当前固定使用 `ghcr.io/tbphp/gpt-load:v1.4.9@sha256:c83996962ed94215e41678edc946525ec50b0ed5fabc62b149112e32a2e288dc`，按 PostgreSQL + Redis 运行，使用 `ai-services-redis` 的 database 0，并显式保留 Mihomo 默认代理，运行日志保存在 `/app/data/logs`。
-- `codex2api` 使用 initContainer 幂等创建 `codex2api` 数据库与用户；当前固定使用 `ghcr.io/james-6-23/codex2api:2.5.5@sha256:e549968c6b9e48c860b1fcfeb4066f5b213298e5608af8f4be9f755da72cff73`，按 PostgreSQL + Redis 缓存运行，使用 `ai-services-redis` 的 database 1，运行期图片与日志保存在 `/data`。
+- `codex2api` 使用 initContainer 幂等创建 `codex2api` 数据库与用户；当前固定使用 `ghcr.io/james-6-23/codex2api:2.5.7@sha256:155ad41f03d30847e2c566d404fb16f51878bd020b9cd949c9a33d057d31ef64`，按 PostgreSQL + Redis 缓存运行，使用 `ai-services-redis` 的 database 1，运行期图片与日志保存在 `/data`。
 - `halowebui` 使用 initContainer 幂等创建 `halowebui` 数据库与用户；当前固定使用 `ghcr.io/ztx888/halowebui:main@sha256:6ac7ed58a17779f1feb7a8bc562b4546985ef478d3ea1a53ca083442b856939f`，按 PostgreSQL + Redis 运行，使用 `ai-services-redis` 的 database 2，通过 `ai-services-redis-secret` 中的 default Redis 密码连接，并通过 `WEBSOCKET_MANAGER=redis` 将 WebSocket 事件同步也挂到共享 Redis。
 - `halowebui` 数据目录固定为 `/app/backend/data`，用于保留上传内容与运行时缓存；`WEBUI_SECRET_KEY` 必须稳定，首次注册用户会成为管理员。
 - `halowebui-secret` 只保存 HaloWebUI 自身的 `WEBUI_SECRET_KEY`、`HALOWEBUI_DB_PASSWORD` 与 `DATABASE_URL`；共享 Redis 密码继续由 `ai-services-redis-secret` 统一保存。
