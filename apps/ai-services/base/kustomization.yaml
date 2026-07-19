@@ -22,5 +22,4 @@ resources:
   - notion2api.yaml
   - wa-app.yaml
   - chatgpt2api.yaml
-  - anyrouter-navigation-diagnostic.yaml
   - ingress.yaml
