@@ -36,10 +36,10 @@ data:
       "retry_attempts": 3,
       "retry_delay_sec": 2,
       "request_timeout_sec": 180,
-      "gemini_bl": "boq_assistant-bard-web-server_20260525.09_p0",
+      "gemini_bl": "boq_assistant-bard-web-server_20260716.08_p0",
       "auth_user": null,
       "xsrf_token": null,
-      "default_model": "gemini-3.5-flash",
+      "default_model": "gemini-3.6-flash",
       "api_keys": [],
       "cookie_file": null,
       "proxy": "http://mihomo-proxy-nodeport.default.svc.cluster.local:7897",
@@ -72,7 +72,7 @@ spec:
       automountServiceAccountToken: false
       containers:
         - name: gemini-web2api
-          image: ghcr.io/sophomoresty/gemini-web2api:latest@sha256:61e1a64db4b02c63b141671b7a9463c7e7e699ff99125a976780e78d4b4b5180
+          image: ghcr.io/sophomoresty/gemini-web2api:latest@sha256:a16e7c89444eec867f40e7f23bafb6ab50e7de6663aa137afbd17dce250119f1
           imagePullPolicy: Always
           ports:
             - name: http
