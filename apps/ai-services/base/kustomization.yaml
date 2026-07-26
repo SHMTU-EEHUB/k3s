@@ -23,3 +23,7 @@ resources:
   - wa-app.yaml
   - chatgpt2api.yaml
   - ingress.yaml
+  # Retained backup volume and one-shot backup jobs. Job names are immutable:
+  # never edit an existing job in place, add a new dated file instead.
+  - backup-pvc.yaml
+  - backup-postgres-20260726.yaml

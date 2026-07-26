@@ -1,0 +1,102 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: ai-services-backup-postgres-20260726
+  namespace: ai-services
+  labels:
+    app.kubernetes.io/name: ai-services-backup
+    app.kubernetes.io/component: backup
+    app.kubernetes.io/part-of: eehub-ai-services
+spec:
+  backoffLimit: 2
+  activeDeadlineSeconds: 3600
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: ai-services-backup
+        app.kubernetes.io/component: backup
+        app.kubernetes.io/part-of: eehub-ai-services
+    spec:
+      restartPolicy: Never
+      automountServiceAccountToken: false
+      containers:
+        - name: backup-postgres
+          image: postgres:16-alpine@sha256:57c72fd2a128e416c7fcc499958864df5301e940bca0a56f58fddf30ffc07777
+          imagePullPolicy: Always
+          command:
+            - sh
+            - -ec
+            - |
+              set -eu
+              TS=20260726
+              OUT=/backup/postgres-$TS
+              TMP=/backup/postgres-$TS.partial
+              rm -rf "$TMP"
+              mkdir -p "$TMP"
+
+              until pg_isready -h "$POSTGRES_HOST" -p 5432 -U postgres -d postgres; do
+                echo "waiting for ai-postgresql..."
+                sleep 2
+              done
+
+              export PGPASSWORD="$POSTGRES_PASSWORD"
+              PSQL="psql -h $POSTGRES_HOST -p 5432 -U postgres"
+
+              echo "== dumping globals =="
+              pg_dumpall -h "$POSTGRES_HOST" -p 5432 -U postgres --globals-only > "$TMP/globals.sql"
+
+              DBS=$($PSQL -d postgres -Atc "SELECT datname FROM pg_database WHERE datallowconn AND datname <> 'template1' ORDER BY 1")
+              for db in $DBS; do
+                echo "== dumping $db =="
+                pg_dump -h "$POSTGRES_HOST" -p 5432 -U postgres -d "$db" -Fc -Z 6 -f "$TMP/$db.dump"
+              done
+
+              echo "== verifying archives =="
+              for f in "$TMP"/*.dump; do
+                pg_restore -l "$f" > /dev/null
+                pg_restore -f /dev/null "$f"
+                echo "$f sections=$(pg_restore -l "$f" | grep -c 'TABLE DATA' || true)"
+              done
+
+              echo "== restore round-trip check for aether =="
+              $PSQL -d postgres -v ON_ERROR_STOP=1 -c 'DROP DATABASE IF EXISTS aether_verify'
+              $PSQL -d postgres -v ON_ERROR_STOP=1 -c 'CREATE DATABASE aether_verify OWNER aether'
+              pg_restore -h "$POSTGRES_HOST" -p 5432 -U postgres -d aether_verify --no-privileges "$TMP/aether.dump"
+              $PSQL -d aether -Atc "SELECT table_name, (xpath('/row/c/text()', query_to_xml(format('SELECT count(*) AS c FROM %I.%I', table_schema, table_name), false, true, '')))[1]::text::bigint FROM information_schema.tables WHERE table_schema='public' AND table_type='BASE TABLE' ORDER BY 1" > "$TMP/aether-src-counts.txt"
+              $PSQL -d aether_verify -Atc "SELECT table_name, (xpath('/row/c/text()', query_to_xml(format('SELECT count(*) AS c FROM %I.%I', table_schema, table_name), false, true, '')))[1]::text::bigint FROM information_schema.tables WHERE table_schema='public' AND table_type='BASE TABLE' ORDER BY 1" > "$TMP/aether-dst-counts.txt"
+              diff "$TMP/aether-src-counts.txt" "$TMP/aether-dst-counts.txt"
+              $PSQL -d postgres -v ON_ERROR_STOP=1 -c 'DROP DATABASE aether_verify'
+
+              echo "== writing checksums =="
+              cd "$TMP"
+              sha256sum globals.sql *.dump *.txt > SHA256SUMS
+              sha256sum -c SHA256SUMS
+
+              rm -rf "$OUT"
+              mv "$TMP" "$OUT"
+              ls -l "$OUT"
+              echo "BACKUP-POSTGRES-OK $OUT"
+          env:
+            - name: POSTGRES_HOST
+              value: ai-postgresql.ai-services.svc.cluster.local
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: ai-postgresql-secret
+                  key: POSTGRES_PASSWORD
+            - name: TZ
+              value: Asia/Shanghai
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: "1"
+              memory: 1Gi
+          volumeMounts:
+            - name: backup
+              mountPath: /backup
+      volumes:
+        - name: backup
+          persistentVolumeClaim:
+            claimName: ai-services-backup
