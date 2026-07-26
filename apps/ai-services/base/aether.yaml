@@ -189,11 +189,20 @@ spec:
             limits:
               cpu: "1"
               memory: 2Gi
+          # 启动阶段会执行数据库迁移与回填，大表建索引耗时可能远超常规探针预算，
+          # 由 startupProbe 独立提供最长约 20 分钟的启动窗口，避免迁移被中途 SIGKILL。
+          startupProbe:
+            httpGet:
+              path: /health
+              port: 8084
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 120
           readinessProbe:
             httpGet:
               path: /health
               port: 8084
-            initialDelaySeconds: 30
             periodSeconds: 10
             timeoutSeconds: 5
             failureThreshold: 6
@@ -201,7 +210,6 @@ spec:
             httpGet:
               path: /health
               port: 8084
-            initialDelaySeconds: 60
             periodSeconds: 30
             timeoutSeconds: 10
             failureThreshold: 3
