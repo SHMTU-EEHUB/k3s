@@ -11,7 +11,7 @@
 - `Deployment/ai-services-redis`：GPT-Load、Codex2API 与 HaloWebUI 共用 Redis。
 - `Deployment/kiro-rs`：Kiro 反代，走 Mihomo GPT 专用节点。
 - `Deployment/cli-proxy-api`：Codex / CLIProxyAPI 反代，走 Mihomo 默认节点。
-- `Deployment/grok2api`：官方 v3.0.4 Grok 网关，`Service/grok2api` 当前承载该版本。
+- `Deployment/grok2api`：官方 v3.0.7 Grok 网关，`Service/grok2api` 当前承载该版本。
 - `Deployment/gpt-load`：GPT-Load 多渠道 AI 代理，走 Mihomo 默认节点，使用共享 PostgreSQL 与共享 Redis。
 - `Deployment/codex2api`：Codex2API 管理台与 API 网关，走 Mihomo 默认节点，使用共享 PostgreSQL 与共享 Redis。
 - `Deployment/halowebui`：HaloWebUI AI Web 控制台，走 Mihomo 默认节点，使用共享 PostgreSQL 与共享 Redis。
@@ -108,7 +108,7 @@
 - `aether` 的 Authentik 登录配置保存在 Aether 后台 / PostgreSQL 的 OAuth Provider 配置中，当前回调入口应使用 `https://ai.eehub.mingz.top/api/oauth/custom_authentik/callback`，前端完成页为 `https://ai.eehub.mingz.top/auth/callback`。如果出现“令牌兑换失败”，优先确认 Aether Pod 未设置 `HTTP_PROXY` / `HTTPS_PROXY` / `ALL_PROXY` 等代理环境变量，确保 `https://auth.eehub.mingz.top/application/o/token/` 与 `/userinfo/` 不经 Mihomo 代理。
 - `kiro-rs` 当前固定使用 `ghcr.io/hank9999/kiro-rs:v2026.3.1@sha256:b9d89803f7ff1d74501fdf3bc843540935d3417a3c2baf1848fc15aff7ef3268`，通过 initContainer 将 `config.json` 与初始 `credentials.json` 复制到可写 PVC，避免 Token 刷新后无法回写；当前代理指向 `http://mihomo-gpt-listener.default.svc.cluster.local:7910`。
 - `cli-proxy-api` 通过 initContainer 将 `config.yaml` 复制到 PVC，并初始化持久化 `auths` 目录；当前固定使用 `eceasy/cli-proxy-api:v7.2.94@sha256:5f261f6ca5505fbe4ba0bc30cc615a4d3925c99ad6ae686411e43cf32135bb5d`。
-- `grok2api` 当前固定使用官方 `ghcr.io/chenyme/grok2api:v3.0.4@sha256:9b42950c9fd65f74009d2b62d4244c95b0bc777f54aa20bd86cda1f088784a76`。配置从 `grok2api-secret` 挂载到 `/run/grok2api/config.yaml`，数据位于原名 PVC 的 `/app/data`；当前已使用 v3 数据格式，v3 不迁移或复用旧 v2 数据格式。
+- `grok2api` 当前固定使用官方 `ghcr.io/chenyme/grok2api:v3.0.7@sha256:42cdeebbf223481c1e8e96f66ecf4b8513f8ada67d43957f73b52ea58b153889`。配置从 `grok2api-secret` 挂载到 `/run/grok2api/config.yaml`，数据位于原名 PVC 的 `/app/data`；当前已使用 v3 数据格式，v3 不迁移或复用旧 v2 数据格式。
 - 首次登录使用 `kubectl -n ai-services port-forward deployment/grok2api 8000:8000`，然后访问 `http://127.0.0.1:8000` 并以 `admin` 登录。bootstrap 密码仅保存在被忽略的 `.agent-tmp/ai-services-grok2api-secret.local.yaml` 明文清单和提交的 SealedSecret 密文中，不得提交或输出明文。
 - `secrets.credentialEncryptionKey` 是已保存 provider 凭据的加密根密钥，必须保持稳定；轮换或丢失会导致既有凭据无法解密。
 - v3 的标准 `HTTP_PROXY` / `HTTPS_PROXY` / `ALL_PROXY` 仅覆盖 Build API / Statsig。Web chat、image、video 不读取这些环境变量；首次登录后必须在管理后台新增并启用指向 `http://mihomo-proxy-nodeport.default.svc.cluster.local:7897` 的数据库出站 HTTP 节点。
