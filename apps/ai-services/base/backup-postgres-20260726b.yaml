@@ -1,7 +1,7 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: ai-services-backup-postgres-20260726
+  name: ai-services-backup-postgres-20260726b
   namespace: ai-services
   labels:
     app.kubernetes.io/name: ai-services-backup
@@ -28,7 +28,7 @@ spec:
             - -ec
             - |
               set -eu
-              TS=20260726
+              TS=20260726b
               OUT=/backup/postgres-$TS
               TMP=/backup/postgres-$TS.partial
               rm -rf "$TMP"
@@ -41,11 +41,23 @@ spec:
 
               export PGPASSWORD="$POSTGRES_PASSWORD"
               PSQL="psql -h $POSTGRES_HOST -p 5432 -U postgres"
+              COUNT_SQL="SELECT table_name, (xpath('/row/c/text()', query_to_xml(format('SELECT count(*) AS c FROM %I.%I', table_schema, table_name), false, true, '')))[1]::text::bigint FROM information_schema.tables WHERE table_schema='public' AND table_type='BASE TABLE' ORDER BY 1"
+
+              echo "== dropping leftover verify databases =="
+              for db in $($PSQL -d postgres -Atc "SELECT datname FROM pg_database WHERE datname LIKE '%\_verify'"); do
+                $PSQL -d postgres -v ON_ERROR_STOP=1 -c "DROP DATABASE \"$db\""
+              done
+
+              # aether receives writes continuously, so a dump is a point-in-time
+              # snapshot. Bracket it with counts taken before and after so the
+              # restored snapshot can be asserted to fall inside that window.
+              echo "== recording pre-dump aether counts =="
+              $PSQL -d aether -Atc "$COUNT_SQL" > "$TMP/aether-counts-before.txt"
 
               echo "== dumping globals =="
               pg_dumpall -h "$POSTGRES_HOST" -p 5432 -U postgres --globals-only > "$TMP/globals.sql"
 
-              DBS=$($PSQL -d postgres -Atc "SELECT datname FROM pg_database WHERE datallowconn AND datname <> 'template1' ORDER BY 1")
+              DBS=$($PSQL -d postgres -Atc "SELECT datname FROM pg_database WHERE datallowconn AND datname <> 'template1' AND datname NOT LIKE '%\_verify' ORDER BY 1")
               for db in $DBS; do
                 echo "== dumping $db =="
                 pg_dump -h "$POSTGRES_HOST" -p 5432 -U postgres -d "$db" -Fc -Z 6 -f "$TMP/$db.dump"
@@ -59,13 +71,36 @@ spec:
               done
 
               echo "== restore round-trip check for aether =="
-              $PSQL -d postgres -v ON_ERROR_STOP=1 -c 'DROP DATABASE IF EXISTS aether_verify'
               $PSQL -d postgres -v ON_ERROR_STOP=1 -c 'CREATE DATABASE aether_verify OWNER aether'
               pg_restore -h "$POSTGRES_HOST" -p 5432 -U postgres -d aether_verify --no-privileges "$TMP/aether.dump"
-              $PSQL -d aether -Atc "SELECT table_name, (xpath('/row/c/text()', query_to_xml(format('SELECT count(*) AS c FROM %I.%I', table_schema, table_name), false, true, '')))[1]::text::bigint FROM information_schema.tables WHERE table_schema='public' AND table_type='BASE TABLE' ORDER BY 1" > "$TMP/aether-src-counts.txt"
-              $PSQL -d aether_verify -Atc "SELECT table_name, (xpath('/row/c/text()', query_to_xml(format('SELECT count(*) AS c FROM %I.%I', table_schema, table_name), false, true, '')))[1]::text::bigint FROM information_schema.tables WHERE table_schema='public' AND table_type='BASE TABLE' ORDER BY 1" > "$TMP/aether-dst-counts.txt"
-              diff "$TMP/aether-src-counts.txt" "$TMP/aether-dst-counts.txt"
+              $PSQL -d aether_verify -Atc "$COUNT_SQL" > "$TMP/aether-counts-restored.txt"
+              $PSQL -d aether -Atc "$COUNT_SQL" > "$TMP/aether-counts-after.txt"
               $PSQL -d postgres -v ON_ERROR_STOP=1 -c 'DROP DATABASE aether_verify'
+
+              echo "== asserting before <= restored <= after per table =="
+              awk -F'|' '
+                FILENAME == before { b[$1] = $2; next }
+                FILENAME == restored { r[$1] = $2; seen[$1] = 1; next }
+                { a[$1] = $2; seen[$1] = 1 }
+                END {
+                  bad = 0
+                  for (t in seen) {
+                    if (!(t in b) || !(t in r) || !(t in a)) {
+                      printf "MISSING TABLE %s before=%s restored=%s after=%s\n", t, (t in b ? b[t] : "-"), (t in r ? r[t] : "-"), (t in a ? a[t] : "-")
+                      bad = 1
+                      continue
+                    }
+                    if (r[t] < b[t] || r[t] > a[t]) {
+                      printf "OUT OF RANGE %s before=%s restored=%s after=%s\n", t, b[t], r[t], a[t]
+                      bad = 1
+                    }
+                  }
+                  for (t in b) if (!(t in seen)) { printf "MISSING TABLE %s only in before\n", t; bad = 1 }
+                  if (bad) exit 1
+                  printf "row-count window OK for %d tables\n", length(seen)
+                }
+              ' before="$TMP/aether-counts-before.txt" restored="$TMP/aether-counts-restored.txt" \
+                "$TMP/aether-counts-before.txt" "$TMP/aether-counts-restored.txt" "$TMP/aether-counts-after.txt"
 
               echo "== writing checksums =="
               cd "$TMP"
