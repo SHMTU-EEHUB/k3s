@@ -31,6 +31,8 @@ metadata:
     app.kubernetes.io/part-of: eehub-ai-services
 spec:
   replicas: 1
+  # 启动迁移可能长时间不就绪，放宽 rollout 判定窗口以匹配 startupProbe 预算。
+  progressDeadlineSeconds: 7800
   selector:
     matchLabels:
       app: aether
@@ -190,7 +192,7 @@ spec:
               cpu: "1"
               memory: 2Gi
           # 启动阶段会执行数据库迁移与回填，大表建索引耗时可能远超常规探针预算，
-          # 由 startupProbe 独立提供最长约 20 分钟的启动窗口，避免迁移被中途 SIGKILL。
+          # 由 startupProbe 独立提供最长约 2 小时的启动窗口，避免迁移被中途 SIGKILL。
           startupProbe:
             httpGet:
               path: /health
@@ -198,7 +200,7 @@ spec:
             initialDelaySeconds: 20
             periodSeconds: 10
             timeoutSeconds: 5
-            failureThreshold: 120
+            failureThreshold: 720
           readinessProbe:
             httpGet:
               path: /health
