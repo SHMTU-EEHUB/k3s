@@ -1,0 +1,65 @@
+# 临时只读读取器：备份 PVC 是 ReadWriteOnce，备份 Job 结束后卷处于 detached 状态，
+# 无法直接把产物取到集群外。此 Deployment 仅以只读方式挂载备份卷，供链下复制使用，
+# 复制并本地校验完成后应当移除（备份 PVC 与备份 Job 保留）。
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ai-services-backup-reader
+  namespace: ai-services
+  labels:
+    app: ai-services-backup-reader
+    app.kubernetes.io/name: ai-services-backup-reader
+    app.kubernetes.io/component: backup
+    app.kubernetes.io/part-of: eehub-ai-services
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ai-services-backup-reader
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: ai-services-backup-reader
+        app.kubernetes.io/name: ai-services-backup-reader
+        app.kubernetes.io/component: backup
+        app.kubernetes.io/part-of: eehub-ai-services
+    spec:
+      automountServiceAccountToken: false
+      containers:
+        - name: reader
+          image: busybox:1.38.0@sha256:fd8d9aa63ba2f0982b5304e1ee8d3b90a210bc1ffb5314d980eb6962f1a9715d
+          imagePullPolicy: Always
+          command:
+            - sh
+            - -c
+            - while true; do sleep 3600; done
+          securityContext:
+            runAsUser: 0
+            runAsGroup: 0
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+              add:
+                - DAC_READ_SEARCH
+            seccompProfile:
+              type: RuntimeDefault
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
+          volumeMounts:
+            - name: backup
+              mountPath: /backup
+              readOnly: true
+      volumes:
+        - name: backup
+          persistentVolumeClaim:
+            claimName: ai-services-backup
+            readOnly: true

@@ -28,3 +28,5 @@ resources:
   - backup-pvc.yaml
   - backup-postgres-20260726b.yaml
   - backup-grok2api-20260726.yaml
+  # 临时只读读取器，链下副本取回后移除。
+  - backup-reader.yaml
