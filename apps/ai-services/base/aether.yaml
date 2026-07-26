@@ -31,6 +31,8 @@ metadata:
     app.kubernetes.io/part-of: eehub-ai-services
 spec:
   replicas: 1
+  # 启动迁移可能长时间不就绪，放宽 rollout 判定窗口以匹配 startupProbe 预算。
+  progressDeadlineSeconds: 7800
   selector:
     matchLabels:
       app: aether
@@ -110,7 +112,7 @@ spec:
               memory: 256Mi
       containers:
         - name: aether
-          image: ghcr.io/fawney19/aether:0.7.10@sha256:60c4194c22c3a7e6247fd9ec3663d11e29b9a71ab75d739cfae443e0e4ee055b
+          image: ghcr.io/fawney19/aether:0.7.11@sha256:2f16571c3a9d14b7abc1c15beab8561802f320698436a3e973c69ef1aba6be63
           imagePullPolicy: Always
           ports:
             - name: http
@@ -189,11 +191,20 @@ spec:
             limits:
               cpu: "1"
               memory: 2Gi
+          # 启动阶段会执行数据库迁移与回填，大表建索引耗时可能远超常规探针预算，
+          # 由 startupProbe 独立提供最长约 2 小时的启动窗口，避免迁移被中途 SIGKILL。
+          startupProbe:
+            httpGet:
+              path: /health
+              port: 8084
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 720
           readinessProbe:
             httpGet:
               path: /health
               port: 8084
-            initialDelaySeconds: 30
             periodSeconds: 10
             timeoutSeconds: 5
             failureThreshold: 6
@@ -201,7 +212,6 @@ spec:
             httpGet:
               path: /health
               port: 8084
-            initialDelaySeconds: 60
             periodSeconds: 30
             timeoutSeconds: 10
             failureThreshold: 3
