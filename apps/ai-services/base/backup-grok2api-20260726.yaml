@@ -1,0 +1,117 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: ai-services-backup-grok2api-20260726
+  namespace: ai-services
+  labels:
+    app.kubernetes.io/name: ai-services-backup
+    app.kubernetes.io/component: backup
+    app.kubernetes.io/part-of: eehub-ai-services
+spec:
+  backoffLimit: 2
+  activeDeadlineSeconds: 1800
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: ai-services-backup
+        app.kubernetes.io/component: backup
+        app.kubernetes.io/part-of: eehub-ai-services
+    spec:
+      restartPolicy: Never
+      automountServiceAccountToken: false
+      containers:
+        - name: backup-grok2api
+          image: busybox:1.38.0@sha256:fd8d9aa63ba2f0982b5304e1ee8d3b90a210bc1ffb5314d980eb6962f1a9715d
+          imagePullPolicy: Always
+          command:
+            - sh
+            - -ec
+            - |
+              set -eu
+              TS=20260726
+              OUT=/backup/grok2api-$TS
+              TMP=/backup/grok2api-$TS.partial
+              rm -rf "$TMP"
+              mkdir -p "$TMP"
+
+              # A consistent copy of the SQLite databases requires the app to be
+              # stopped. grok2api is scaled to zero in Git; confirm the service
+              # really has no listener before touching the volume.
+              i=0
+              while nc -z grok2api 8000 2>/dev/null; do
+                i=$((i + 1))
+                if [ "$i" -gt 60 ]; then
+                  echo "grok2api still serving traffic, refusing to take an inconsistent copy"
+                  exit 1
+                fi
+                echo "waiting for grok2api to stop..."
+                sleep 5
+              done
+              echo "grok2api is stopped"
+
+              echo "== recording source checksums =="
+              cd /grok
+              find . -type f -exec sha256sum {} + | sort -k2 > "$TMP/grok2api-data.sha256"
+              wc -l < "$TMP/grok2api-data.sha256"
+
+              echo "== archiving =="
+              tar czf "$TMP/grok2api-data.tgz" -C /grok .
+
+              echo "== round-trip verification =="
+              rm -rf /tmp/verify
+              mkdir -p /tmp/verify
+              tar xzf "$TMP/grok2api-data.tgz" -C /tmp/verify
+              cd /tmp/verify
+              sha256sum -c "$TMP/grok2api-data.sha256"
+
+              echo "== sqlite header check =="
+              for db in ./backend.db ./data/accounts.db; do
+                if [ -f "$db" ]; then
+                  head -c 16 "$db" | grep -q 'SQLite format 3' && echo "$db header OK"
+                fi
+              done
+
+              echo "== writing checksums =="
+              cd "$TMP"
+              sha256sum grok2api-data.tgz grok2api-data.sha256 > SHA256SUMS
+              sha256sum -c SHA256SUMS
+
+              rm -rf "$OUT"
+              mv "$TMP" "$OUT"
+              ls -l "$OUT"
+              echo "BACKUP-GROK2API-OK $OUT"
+          securityContext:
+            runAsUser: 0
+            runAsGroup: 0
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+              add:
+                - DAC_OVERRIDE
+            seccompProfile:
+              type: RuntimeDefault
+          env:
+            - name: TZ
+              value: Asia/Shanghai
+          resources:
+            requests:
+              cpu: 100m
+              memory: 64Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+          volumeMounts:
+            - name: grok
+              mountPath: /grok
+              readOnly: true
+            - name: backup
+              mountPath: /backup
+      volumes:
+        - name: grok
+          persistentVolumeClaim:
+            claimName: grok2api-data
+            readOnly: true
+        - name: backup
+          persistentVolumeClaim:
+            claimName: ai-services-backup

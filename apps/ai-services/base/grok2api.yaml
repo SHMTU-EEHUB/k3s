@@ -51,7 +51,10 @@ metadata:
     app.kubernetes.io/part-of: eehub-ai-services
     app.kubernetes.io/version: v3
 spec:
-  replicas: 1
+  # Temporarily stopped so the backup job can take a consistent copy of the
+  # SQLite databases before the v3.0.7 schema migration. Restore to 1 together
+  # with the image upgrade.
+  replicas: 0
   selector:
     matchLabels:
       app: grok2api

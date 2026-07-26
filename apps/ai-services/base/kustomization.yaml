@@ -27,3 +27,4 @@ resources:
   # never edit an existing job in place, add a new dated file instead.
   - backup-pvc.yaml
   - backup-postgres-20260726b.yaml
+  - backup-grok2api-20260726.yaml
