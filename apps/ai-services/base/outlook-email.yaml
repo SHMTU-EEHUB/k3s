@@ -63,7 +63,7 @@ spec:
       automountServiceAccountToken: false
       containers:
         - name: outlook-email
-          image: ghcr.io/zeropointsix/outlook-email-plus:v2.7.0@sha256:d446243419b5e1a4fca430c1e27f21020836c8ea777d4e3a9bfaffc2560ed2b4
+          image: ghcr.io/zeropointsix/outlook-email-plus:v2.8.0@sha256:38ec7f0e8adbcd95277cc8e06d35cb574640eb609e1b433d1355587ea7005e09
           imagePullPolicy: Always
           ports:
             - name: http
