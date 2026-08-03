@@ -71,7 +71,7 @@ spec:
       automountServiceAccountToken: false
       initContainers:
         - name: prepare-data
-          image: busybox:1.38.0@sha256:fd8d9aa63ba2f0982b5304e1ee8d3b90a210bc1ffb5314d980eb6962f1a9715d
+          image: busybox:1.38.0@sha256:dc2d74b28e4cf8984fa52af1f39bc7c3d9c73760b41a74d629f5d11b1ab28616
           imagePullPolicy: Always
           command:
             - sh
@@ -93,7 +93,7 @@ spec:
               mountPath: /app/data
       containers:
         - name: grok2api
-          image: ghcr.io/chenyme/grok2api:v3.0.7@sha256:42cdeebbf223481c1e8e96f66ecf4b8513f8ada67d43957f73b52ea58b153889
+          image: ghcr.io/chenyme/grok2api:v3.0.11@sha256:997f1d47526c4f3b064b3b75fa62969609e95d1bdcb8b8b20a200214e8b819a9
           imagePullPolicy: Always
           ports:
             - name: http
