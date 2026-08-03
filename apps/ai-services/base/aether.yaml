@@ -112,7 +112,7 @@ spec:
               memory: 256Mi
       containers:
         - name: aether
-          image: ghcr.io/fawney19/aether:0.7.11@sha256:2f16571c3a9d14b7abc1c15beab8561802f320698436a3e973c69ef1aba6be63
+          image: ghcr.io/fawney19/aether:0.7.12@sha256:67e529290d2415178f25e9abeab336a184a331ca60bb5ebc9959f7e8abd51d74
           imagePullPolicy: Always
           ports:
             - name: http
