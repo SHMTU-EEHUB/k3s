@@ -47,6 +47,8 @@ metadata:
     app.kubernetes.io/part-of: eehub-ai-services
 spec:
   replicas: 1
+  # 启动迁移较慢，放宽 rollout 判定窗口。
+  progressDeadlineSeconds: 2100
   selector:
     matchLabels:
       app: codex2api
@@ -118,7 +120,7 @@ spec:
             - name: TZ
               value: Asia/Shanghai
         - name: prepare-data-dirs
-          image: busybox:1.38.0@sha256:fd8d9aa63ba2f0982b5304e1ee8d3b90a210bc1ffb5314d980eb6962f1a9715d
+          image: busybox:1.38.0@sha256:dc2d74b28e4cf8984fa52af1f39bc7c3d9c73760b41a74d629f5d11b1ab28616
           imagePullPolicy: Always
           command:
             - sh
@@ -131,7 +133,7 @@ spec:
               mountPath: /data
       containers:
         - name: codex2api
-          image: ghcr.io/james-6-23/codex2api:2.5.8@sha256:4b59f4929cab0f045afa72a90b20636073018845bbf390a41317ba931b378c0b
+          image: ghcr.io/james-6-23/codex2api:2.6.9@sha256:e3ff8e4afe50108540a70c81a7419d934314f8e7d78e1d528db6d8831c4b3ca8
           imagePullPolicy: Always
           ports:
             - name: http
@@ -210,11 +212,19 @@ spec:
             limits:
               cpu: "1"
               memory: 1Gi
+          # 首次启动会执行 schema 与 workspace 迁移，预留约 30 分钟。
+          startupProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 180
           readinessProbe:
             httpGet:
               path: /health
               port: 8080
-            initialDelaySeconds: 30
             periodSeconds: 10
             timeoutSeconds: 5
             failureThreshold: 6
@@ -222,7 +232,6 @@ spec:
             httpGet:
               path: /health
               port: 8080
-            initialDelaySeconds: 60
             periodSeconds: 30
             timeoutSeconds: 5
             failureThreshold: 3
