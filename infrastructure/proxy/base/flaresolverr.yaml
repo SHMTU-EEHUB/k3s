@@ -65,7 +65,7 @@ spec:
             - name: PROXY_URL
               value: http://resin.proxy.svc.cluster.local:2260
             - name: PROXY_USERNAME
-              value: flaresolverr
+              value: grok
             - name: PROXY_PASSWORD
               valueFrom:
                 secretKeyRef:
