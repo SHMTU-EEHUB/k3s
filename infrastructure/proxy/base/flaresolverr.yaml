@@ -62,6 +62,15 @@ spec:
               value: "8191"
             - name: HOST
               value: 0.0.0.0
+            - name: PROXY_URL
+              value: http://resin.proxy.svc.cluster.local:2260
+            - name: PROXY_USERNAME
+              value: flaresolverr
+            - name: PROXY_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: resin-secret
+                  key: RESIN_PROXY_TOKEN
           resources:
             requests:
               cpu: 100m
