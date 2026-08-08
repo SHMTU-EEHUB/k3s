@@ -92,7 +92,7 @@ spec:
               memory: 64Mi
             limits:
               cpu: 250m
-              memory: 1Gi
+              memory: 256Mi
           readinessProbe:
             exec:
               command:
