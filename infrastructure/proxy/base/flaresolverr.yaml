@@ -26,7 +26,9 @@ metadata:
     app.kubernetes.io/name: flaresolverr
     app.kubernetes.io/part-of: eehub-proxy
 spec:
-  replicas: 1
+  # FlareSolverr processes browser challenges under sustained load. Keep two
+  # replicas so one saturated browser process does not block all requests.
+  replicas: 2
   selector:
     matchLabels:
       app.kubernetes.io/name: flaresolverr
@@ -79,8 +81,7 @@ spec:
               cpu: "2"
               memory: 2Gi
           startupProbe:
-            httpGet:
-              path: /
+            tcpSocket:
               port: http
             periodSeconds: 10
             failureThreshold: 18
@@ -89,15 +90,13 @@ spec:
               path: /
               port: http
             periodSeconds: 10
-            timeoutSeconds: 5
+            timeoutSeconds: 15
             failureThreshold: 6
           livenessProbe:
-            httpGet:
-              path: /
+            tcpSocket:
               port: http
             periodSeconds: 30
-            timeoutSeconds: 5
-            failureThreshold: 3
+            failureThreshold: 6
           volumeMounts:
             - name: shared-memory
               mountPath: /dev/shm
