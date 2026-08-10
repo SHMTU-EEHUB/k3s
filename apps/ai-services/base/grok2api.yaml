@@ -93,7 +93,7 @@ spec:
               mountPath: /app/data
       containers:
         - name: grok2api
-          image: ghcr.io/chenyme/grok2api:v3.1.1@sha256:080fcd8003ab5991346441f450e67bd13e488b28d17e5f561384b49bbc9b6c63
+          image: ghcr.io/chenyme/grok2api:v3.1.2@sha256:6b4067c5d9e84b13b2fc4f8ec3b3d91ee9b560a80cbbf4e8c3e40b5f8d19e3f3
           imagePullPolicy: Always
           ports:
             - name: http
