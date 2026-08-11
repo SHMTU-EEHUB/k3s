@@ -40,6 +40,7 @@ data:
       "auth_user": null,
       "xsrf_token": null,
       "default_model": "gemini-3.6-flash",
+      "temporary_chats": false,
       "api_keys": [],
       "cookie_file": null,
       "proxy": "http://mihomo-proxy-nodeport.default.svc.cluster.local:7897",
@@ -72,7 +73,7 @@ spec:
       automountServiceAccountToken: false
       containers:
         - name: gemini-web2api
-          image: ghcr.io/sophomoresty/gemini-web2api:latest@sha256:a16e7c89444eec867f40e7f23bafb6ab50e7de6663aa137afbd17dce250119f1
+          image: ghcr.io/sophomoresty/gemini-web2api:latest@sha256:09c00179de3c1cb0d084e1c38f3bf77177fd6795a951a18397c29d7e1263dcb9
           imagePullPolicy: Always
           ports:
             - name: http

@@ -214,3 +214,12 @@ data:
           timeout: 10s
         conditions:
           - "[CONNECTED] == true"
+      - name: chatgpt2api
+        group: ai-services
+        url: http://chatgpt2api.ai-services.svc.cluster.local/health?format=json
+        interval: 1m
+        client:
+          timeout: 10s
+        conditions:
+          - "[STATUS] >= 200"
+          - "[STATUS] < 400"
