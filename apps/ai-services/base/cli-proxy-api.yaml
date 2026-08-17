@@ -81,7 +81,7 @@ spec:
               readOnly: true
       containers:
         - name: cli-proxy-api
-          image: eceasy/cli-proxy-api:v7.2.133@sha256:944f8b1f5d23981244b5d482290d411d2623bf685749a74c5bca849c865c0ac8
+          image: eceasy/cli-proxy-api:v7.2.135@sha256:53162ac4ebf4f399b729a80830ad13e992add2430e1387a54e09a192987f6df3
           imagePullPolicy: Always
           ports:
             - name: http
