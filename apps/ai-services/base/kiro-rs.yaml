@@ -83,7 +83,7 @@ spec:
               readOnly: true
       containers:
         - name: kiro-rs
-          image: docker.io/zyphrzero/kiro-rs:0.7.5@sha256:78c4dbea0cfba2614c3c71747a939324ffba07535c703ecfb18c150d3c719de9
+          image: docker.io/zyphrzero/kiro-rs:0.8.0@sha256:118df1717fe8dc35139f05f3436a43aee7477bd4d13952c9ed35e5eb00dd079e
           imagePullPolicy: Always
           ports:
             - name: http

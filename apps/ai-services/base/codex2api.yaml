@@ -65,7 +65,7 @@ spec:
       automountServiceAccountToken: false
       initContainers:
         - name: init-codex2api-database
-          image: postgres:16-alpine@sha256:57c72fd2a128e416c7fcc499958864df5301e940bca0a56f58fddf30ffc07777
+          image: postgres:16-alpine@sha256:cf78e76683b9ca8c5733cbbdce6c9262b45b6767934dd0a95e671f9a0fc20685
           imagePullPolicy: Always
           command:
             - sh
@@ -133,7 +133,7 @@ spec:
               mountPath: /data
       containers:
         - name: codex2api
-          image: ghcr.io/james-6-23/codex2api:2.8.4@sha256:72554ca0c1eec84a418db46969265e109c958a9d8b5f9a9eed349c7ae83fba8b
+          image: ghcr.io/james-6-23/codex2api:2.8.9@sha256:dbbd7aca9c8f753dc2bba9a37bce59aae34b20058e13e74978cc6eafc93f44d3
           imagePullPolicy: Always
           ports:
             - name: http
